@@ -68,8 +68,9 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private boolean detectStart = false;
     int[] xyz,prevXYZ,diffXYZ,sqrXYZ,filteredXYZ;
     private ArrayList filterX = new ArrayList();
+    private ArrayList filterY = new ArrayList();
     private ArrayList filterZ = new ArrayList();
-    private static final int filter_size = 5;
+    private static final int filter_size = 8;
     private static final int filter_d_size = filter_size-1;
 
 
@@ -134,7 +135,6 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         mSensorManager.registerListener(this, mGYR, SensorManager.SENSOR_DELAY_GAME);
         mSensorManager.registerListener(this, mROTATE, SensorManager.SENSOR_DELAY_GAME);*/
 
-
         tv1.setText(mACC.getName() +"  width:"+ Width);
     }
 
@@ -155,6 +155,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     public final void onSensorChanged(SensorEvent event) {
         if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
             showSensorData(event);
+            detectPulse();
         }/* else if (event.sensor.getType() == Sensor.TYPE_GYROSCOPE) {
             showSensorData(event);
         } else if (event.sensor.getType() == Sensor.TYPE_ROTATION_VECTOR) {
@@ -170,9 +171,12 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 case 1:
                     if (toastMessage != null) {
                         toastMessage.cancel();
+                        toastMessage = null;
+                    } else {
+                        toastMessage = Toast.makeText(MainActivity.this,
+                                "motion detected!!", Toast.LENGTH_SHORT);
+                        toastMessage.show();
                     }
-                    toastMessage = Toast.makeText(MainActivity.this, "motion detected!!",Toast.LENGTH_SHORT);
-                    toastMessage.show();
 
                     tv1.setText(filteredXYZ[0] +" / "+filteredXYZ[2]);
                     tv1.setTextColor(Color.RED);
@@ -181,6 +185,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 case 2:
                     if (toastMessage != null) {
                         toastMessage.cancel();
+                        toastMessage = null;
                     }
                     tv1.setTextColor(Color.BLACK);
                     Log.i(tag, "toastMessage--");
@@ -218,39 +223,16 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             public void run() {
                 super.run();
                 while(true) {
-                    detectPulse();
-                    drawAll();
+                    //detectPulse();
                     try {
-                        Thread.sleep(1);
+                        drawAll();
+                        Thread.sleep(10);
                     } catch (InterruptedException exception) {
 
                     }
                 }
             }
         }.start();
-    }
-
-
-    private void draw3(int data1,int data2,int data3) {
-        xx++;
-        //Log.i(tag, "draw+ "+xx+"  "+data1+" "+data2+" "+data3);
-        canvas = sfh.lockCanvas(new Rect(xx-1, 0, xx, Height));
-        canvas.drawLine(xx-1, oldY1, xx, offset1-data1 , mPaint1);
-        canvas.drawLine(xx-1, oldY2, xx, offset1-data2 , mPaint2);
-        canvas.drawLine(xx-1, oldY3, xx, offset1-data3 , mPaint3);
-
-        oldY1 = offset1-data1;
-        oldY2 = offset1-data2;
-        oldY3 = offset1-data3;
-
-        sfh.unlockCanvasAndPost(canvas);
-
-        if (xx>=Width) {
-            xx=0; //canvas.drawColor(Color.TRANSPARENT,Mode.CLEAR);
-            canvas = sfh.lockCanvas(new Rect(0, 0, Width, Height));
-            canvas.drawRect(0, 0, Width, Height , mPaint4);
-            sfh.unlockCanvasAndPost(canvas);
-        }
     }
 
     private void drawAll() {
@@ -302,6 +284,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         sqrXYZ = new int[3];
         filteredXYZ  = new int[3];
         filterX = new ArrayList();
+        filterY = new ArrayList();
         filterZ = new ArrayList();
 
         xx=1;
@@ -313,9 +296,12 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         oldY5=0;
     }
 
+    long time = 0;
+    boolean sflag = false;
     private void detectPulse() {
         if (!detectStart) {
             detectStart = true;
+            time = System.currentTimeMillis();
             prevXYZ[0] = xyz[0];
             prevXYZ[1] = xyz[1];
             prevXYZ[2] = xyz[2];
@@ -328,43 +314,61 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             sqrXYZ[1] = diffXYZ[1] * diffXYZ[1];
             sqrXYZ[2] = diffXYZ[2] * diffXYZ[2];
 
-           if (filterX.size() < filter_size) {
+            if (filterX.size() < filter_size) {
                 filterX.add(sqrXYZ[0]);
+                filterY.add(sqrXYZ[1]);
                 filterZ.add(sqrXYZ[2]);
-           } else {
+            } else {
                 //Log.i(tag, "detectPulse+ "+filter.size() +" "+sqrXYZ[0]+" / "+filter.toString());
                 filterX.remove(0);
                 filterX.add(sqrXYZ[0]);
-                filterZ.remove(2);
+                filterY.remove(0);
+                filterY.add(sqrXYZ[1]);
+                filterZ.remove(0);
                 filterZ.add(sqrXYZ[2]);
-           }
+            }
 
-           int sumX = 0, sumZ = 0;
-           for(int i = 1; i < filterX.size(); i++) {
-               sumX += (int)filterX.get(i);
-               sumZ += (int)filterZ.get(i);
-           }
+            int[] sumXYZ  = new int[3];
+            for(int i = 1; i < filterX.size(); i++) {
+                sumXYZ[0] += (int)filterX.get(i);
+                sumXYZ[1] += (int)filterX.get(i);
+                sumXYZ[2] += (int)filterZ.get(i);
+            }
 
-           filteredXYZ[0] = sumX / filter_d_size; // divide by filter_d_size
-           filteredXYZ[2] = sumZ / filter_d_size; // divide by filter_d_size
+            filteredXYZ[0] = sumXYZ[0] / filter_d_size; // divide by filter_d_size
+            filteredXYZ[1] = sumXYZ[1] / filter_d_size; // divide by filter_d_size
+            filteredXYZ[2] = sumXYZ[2] / filter_d_size; // divide by filter_d_size
 
-           //Log.i(tag, "detectPulse+ " + filteredXYZ[0] +" / "+filteredXYZ[2]);
-           boolean flag = false;
-           if (Math.abs(filteredXYZ[0] - sqrXYZ[0]) > 15 || Math.abs(filteredXYZ[0] - sqrXYZ[0]) > 10) {
-               if(mHandler.obtainMessage(1) != null) {
-                   mHandler.removeMessages(1);
-               }
-               mHandler.sendEmptyMessage(1);
-               flag = true;
-           } else {//if (filteredXYZ[0] < 10 && filteredXYZ[2] < 10) {
-               if(mHandler.obtainMessage(2) != null) {
-                   mHandler.removeMessages(2);
-               }
-               mHandler.sendEmptyMessage(2);
-               flag = false;
-           }
+            if (Math.abs(filteredXYZ[0] - sqrXYZ[0]) > 20 ||
+                    Math.abs(filteredXYZ[1] - sqrXYZ[1]) > 30 ||
+                    Math.abs(filteredXYZ[2] - sqrXYZ[2]) > 15) {
 
-           Log.i(tag, "detectPulse++++ "+flag+" : "+ sqrXYZ[0]+" / "+filteredXYZ[0] +" , "+ sqrXYZ[2]+" / "+filteredXYZ[2]);
+                if (!sflag && System.currentTimeMillis() - time > 250) {
+                    if (mHandler.obtainMessage(1) != null) {
+                        mHandler.removeMessages(1);
+                    }
+                    mHandler.sendEmptyMessage(1);
+                    time = System.currentTimeMillis();
+                    sflag = true;
+
+                    /*Log.i(tag, "detectPulse++++ "+sflag+" : "+
+                            sqrXYZ[0]+" / "+filteredXYZ[0] +" , "+
+                            sqrXYZ[1]+" / "+filteredXYZ[1]+" , "+
+                            sqrXYZ[2]+" / "+filteredXYZ[2]);*/
+                }
+            } else if (sflag && System.currentTimeMillis() - time > 250){//if (filteredXYZ[0] < 10 && filteredXYZ[2] < 10) {
+                if(mHandler.obtainMessage(2) != null) {
+                    mHandler.removeMessages(2);
+                }
+                mHandler.sendEmptyMessage(2);
+                time = System.currentTimeMillis();
+                sflag = false;
+            }
+
+            Log.i(tag, "detectPulse++++ "+sflag+" : "+
+                    sqrXYZ[0]+" / "+filteredXYZ[0] +" , "+
+                    sqrXYZ[1]+" / "+filteredXYZ[1]+" , "+
+                    sqrXYZ[2]+" / "+filteredXYZ[2]);
         }
     }
 }

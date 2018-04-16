@@ -34,7 +34,6 @@ public class AccUtils {
         public void  onMotionChanged(int type);
     }
 
-
     public void AccUtils(Context context, MotionListener listener){ //Handler handler ) {
         mListener = listener;
         //mHandler = handler;

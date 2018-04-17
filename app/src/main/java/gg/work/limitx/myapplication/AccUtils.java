@@ -38,14 +38,14 @@ public class AccUtils {
         mListener = listener;
 
         mSensorManager = (SensorManager)context.getSystemService(Context.SENSOR_SERVICE);
-        mSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+        mSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION);
     }
 
     public AccUtils(Context context, Handler handler) {
         mHandler = handler;
 
         mSensorManager = (SensorManager)context.getSystemService(Context.SENSOR_SERVICE);
-        mSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+        mSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION);
     }
 
     public void enableAccSensor(boolean enable) {
@@ -72,7 +72,7 @@ public class AccUtils {
 
     SensorEventListener mSensorListener = new SensorEventListener() {
         public void onSensorChanged(SensorEvent event) {
-            if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
+            if (event.sensor.getType() == Sensor.TYPE_LINEAR_ACCELERATION) {
                 detectPulse(event);
             }
         }
@@ -99,27 +99,25 @@ public class AccUtils {
             diffXYZ[1] = xyz[1] - prevXYZ[1];
             diffXYZ[2] = xyz[2] - prevXYZ[2];
 
-            prevXYZ[0] = xyz[0];
-            prevXYZ[1] = xyz[1];
-            prevXYZ[2] = xyz[2];
-
             sqrXYZ[0] = diffXYZ[0] * diffXYZ[0];
             sqrXYZ[1] = diffXYZ[1] * diffXYZ[1];
             sqrXYZ[2] = diffXYZ[2] * diffXYZ[2];
 
-            filteredXYZ[0] = k1.kalmanFilter(sqrXYZ[0]);
+            /*filteredXYZ[0] = k1.kalmanFilter(sqrXYZ[0]);
             filteredXYZ[1] = k2.kalmanFilter(sqrXYZ[1]);
-            filteredXYZ[2] = k3.kalmanFilter(sqrXYZ[2]);
+            filteredXYZ[2] = k3.kalmanFilter(sqrXYZ[2]);*/
+            filteredXYZ[0] = sqrXYZ[0];
+            filteredXYZ[1] = sqrXYZ[1];
+            filteredXYZ[2] = sqrXYZ[2];
 
-            if (filteredXYZ[0]+filteredXYZ[1]+filteredXYZ[2] == 0) {
+            if ((filteredXYZ[0]+filteredXYZ[1]+filteredXYZ[2] == 0) ||
+                    (filteredXYZ[0] > filteredXYZ[2] && filteredXYZ[2] > 0 &&  filteredXYZ[1] == 0)) {
                 if (sflag && System.currentTimeMillis() - time > 300) {
                     onMotionChanged(false);
                 }
             } else if ((filteredXYZ[0] > 4 && (filteredXYZ[1]+filteredXYZ[2] > 3) && (filteredXYZ[1] > 0 || filteredXYZ[2] > 0))  ||
                     (filteredXYZ[1] > 4 && (filteredXYZ[0]+filteredXYZ[2] > 3) && (filteredXYZ[0] > 0 || filteredXYZ[2] > 0)) ||
-                    (filteredXYZ[2] > 4 && (filteredXYZ[1]+filteredXYZ[2] > 3) && (filteredXYZ[0] > 0 || filteredXYZ[1] > 0)) ||
-                    (filteredXYZ[1] > 10 && (filteredXYZ[1] == 0 || filteredXYZ[2] == 0)) ||
-                    (filteredXYZ[2] > 10 && (filteredXYZ[0] == 0 || filteredXYZ[1] == 0))
+                    (filteredXYZ[2] > 10 && (prevXYZ[0]+prevXYZ[1]+prevXYZ[2] < 5))
                     ) {
 
                 if (!sflag && System.currentTimeMillis() - time > 300) {
@@ -128,6 +126,10 @@ public class AccUtils {
             } else if (sflag && System.currentTimeMillis() - time > 300) {//if (filteredXYZ[0] < 10 && filteredXYZ[2] < 10) {
                 onMotionChanged(false);
             }
+
+            prevXYZ[0] = xyz[0];
+            prevXYZ[1] = xyz[1];
+            prevXYZ[2] = xyz[2];
 
             Log.i(tag, "detectPulse++++ " + sflag + " : " +
                     sqrXYZ[0] + " / " + filteredXYZ[0] + " , " +

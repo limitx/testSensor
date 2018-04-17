@@ -24,6 +24,8 @@ public class AccUtils {
 
     kalmanFilterx k1,k2,k3;
 
+    int[] prevXYZ,diffXYZ,sqrXYZ,filteredXYZ;
+
     private Handler mHandler;
 
     private MotionListener mListener;
@@ -50,6 +52,10 @@ public class AccUtils {
         detectStart = false;
         sflag = false;
         time = 0;
+        prevXYZ = new int[3];
+        diffXYZ = new int[3];
+        sqrXYZ = new int[3];
+        filteredXYZ = new int[3];
         k1 = new kalmanFilterx();
         k2 = new kalmanFilterx();
         k3 = new kalmanFilterx();
@@ -76,62 +82,76 @@ public class AccUtils {
         }
     };
 
-    public void detectPulse(SensorEvent event) {
-        int[] XYZ = new int[3];
-        int[] prevXYZ = new int[3];
-        int[] sqrXYZ = new int[3];
+    private void detectPulse(SensorEvent event) {
+        int[] xyz = new int[3];
+        xyz[0] = (int)(event.values[0]);
+        xyz[1] = (int)(event.values[1]);
+        xyz[2] = (int)(event.values[2]);
 
         if (!detectStart) {
             detectStart = true;
+            time = System.currentTimeMillis();
             prevXYZ[0] = (int)(event.values[0]);
             prevXYZ[1] = (int)(event.values[1]);
             prevXYZ[2] = (int)(event.values[2]);
         } else {
-            XYZ[0] = (int)(event.values[0]) - prevXYZ[0];
-            XYZ[1] = (int)(event.values[0]) - prevXYZ[1];
-            XYZ[2] = (int)(event.values[0]) - prevXYZ[2];
+            diffXYZ[0] = xyz[0] - prevXYZ[0];
+            diffXYZ[1] = xyz[1] - prevXYZ[1];
+            diffXYZ[2] = xyz[2] - prevXYZ[2];
 
-            sqrXYZ[0] = XYZ[0] * XYZ[0];
-            sqrXYZ[1] = XYZ[1] * XYZ[1];
-            sqrXYZ[2] = XYZ[2] * XYZ[2];
+            prevXYZ[0] = xyz[0];
+            prevXYZ[1] = xyz[1];
+            prevXYZ[2] = xyz[2];
 
-            XYZ[0] = k1.kalmanFilter(sqrXYZ[0]);
-            XYZ[1] = k2.kalmanFilter(sqrXYZ[1]);
-            XYZ[2] = k3.kalmanFilter(sqrXYZ[2]);
+            sqrXYZ[0] = diffXYZ[0] * diffXYZ[0];
+            sqrXYZ[1] = diffXYZ[1] * diffXYZ[1];
+            sqrXYZ[2] = diffXYZ[2] * diffXYZ[2];
 
+            filteredXYZ[0] = k1.kalmanFilter(sqrXYZ[0]);
+            filteredXYZ[1] = k2.kalmanFilter(sqrXYZ[1]);
+            filteredXYZ[2] = k3.kalmanFilter(sqrXYZ[2]);
 
-            if ((XYZ[0] > 4 && (XYZ[1]+XYZ[2] > 2)) ||
-                    XYZ[1] > 4 || XYZ[2] > 4) {
+            /*if ((filteredXYZ[0] > 4 && (filteredXYZ[1]+filteredXYZ[2] > 2)) ||
+                    (filteredXYZ[1] > 4) || (filteredXYZ[2] > 4)) {
 
                 if (!sflag && System.currentTimeMillis() - time > 200) {
-                    /*if (mHandler.obtainMessage(1) != null) {
-                        mHandler.removeMessages(1);
-                    }
-                    mHandler.sendEmptyMessage(1);*/
                     if(mListener != null) {
                         mListener.onMotionChanged(1);
                     }
-
                     time = System.currentTimeMillis();
                     sflag = true;
                 }
-            } else if (sflag && System.currentTimeMillis() - time > 200) {
-                /*if(mHandler.obtainMessage(2) != null) {
-                    mHandler.removeMessages(2);
-                }
-                mHandler.sendEmptyMessage(2);*/
+            } else if (sflag && System.currentTimeMillis() - time > 200) {//if (filteredXYZ[0] < 10 && filteredXYZ[2] < 10) {
                 if(mListener != null) {
                     mListener.onMotionChanged(2);
                 }
+                time = System.currentTimeMillis();
+                sflag = false;
+            }*/
 
+            if ((filteredXYZ[0] > 4 && (filteredXYZ[1]+filteredXYZ[2] > 2)) ||
+                    (filteredXYZ[1] > 4 && (filteredXYZ[0]+filteredXYZ[2] > 2)) ||
+                    (filteredXYZ[2] > 4 && (filteredXYZ[1]+filteredXYZ[2] > 2))) {
+
+                if (!sflag && System.currentTimeMillis() - time > 200) {
+                    if(mListener != null) {
+                        mListener.onMotionChanged(1);
+                    }
+                    time = System.currentTimeMillis();
+                    sflag = true;
+                }
+            } else if (sflag && System.currentTimeMillis() - time > 200) {//if (filteredXYZ[0] < 10 && filteredXYZ[2] < 10) {
+                if(mListener != null) {
+                    mListener.onMotionChanged(2);
+                }
                 time = System.currentTimeMillis();
                 sflag = false;
             }
 
-            Log.i(tag, "detectPulse++++ "+sflag+" : "+
-                    sqrXYZ[0]+" / "+XYZ[0] +" , "+
-                    sqrXYZ[1]+" / "+XYZ[1]+" , "+
-                    sqrXYZ[2]+" / "+XYZ[2]);
+            Log.i(tag, "detectPulse++++ " + sflag + " : " +
+                    sqrXYZ[0] + " / " + filteredXYZ[0] + " , " +
+                    sqrXYZ[1] + " / " + filteredXYZ[1] + " , " +
+                    sqrXYZ[2] + " / " + filteredXYZ[2]);
         }
     }
 

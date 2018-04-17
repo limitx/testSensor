@@ -317,6 +317,10 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             diffXYZ[1] = xyz[1] - prevXYZ[1];
             diffXYZ[2] = xyz[2] - prevXYZ[2];
 
+            prevXYZ[0] = xyz[0];
+            prevXYZ[1] = xyz[1];
+            prevXYZ[2] = xyz[2];
+
             sqrXYZ[0] = diffXYZ[0] * diffXYZ[0];
             sqrXYZ[1] = diffXYZ[1] * diffXYZ[1];
             sqrXYZ[2] = diffXYZ[2] * diffXYZ[2];

@@ -84,9 +84,11 @@ public class AccUtils {
 
     private void detectPulse(SensorEvent event) {
         int[] xyz = new int[3];
-        xyz[0] = (int)(event.values[0]);
-        xyz[1] = (int)(event.values[1]);
-        xyz[2] = (int)(event.values[2]);
+        xyz[0] = (int)(event.values[0]*2);
+        xyz[1] = (int)(event.values[1]*2);
+        xyz[2] = (int)(event.values[2]*2);
+
+        Log.i(tag, "detectPulse raw " + xyz[0]+" "+xyz[1]+" "+xyz[2]);
 
         if (!detectStart) {
             detectStart = true;
@@ -110,15 +112,19 @@ public class AccUtils {
             filteredXYZ[1] = sqrXYZ[1];
             filteredXYZ[2] = sqrXYZ[2];
 
-
             // xyz=0, y>x z=0 , x>z y=0
             if ((filteredXYZ[0]+filteredXYZ[1]+filteredXYZ[2] == 0) ||
-                    (filteredXYZ[0] > filteredXYZ[2] && filteredXYZ[1] == 0) ||
-                    (filteredXYZ[1] > filteredXYZ[0] && filteredXYZ[2] == 0)) {
+                    (filteredXYZ[0] > filteredXYZ[2] && filteredXYZ[1] < 2) ||
+                    (filteredXYZ[1] > filteredXYZ[0] && filteredXYZ[2] < 2) ||
+                    (filteredXYZ[2] > filteredXYZ[0] && filteredXYZ[1] < 2) ||
+                    (filteredXYZ[1] < 2 && filteredXYZ[0] > 2 && filteredXYZ[2] > 2)
+                    ) {
                 if (sflag && System.currentTimeMillis() - time > 300) {
                     onMotionChanged(false);
                 }
-            } else if ((filteredXYZ[0] > 4 && (filteredXYZ[1]+filteredXYZ[2] > 3) && (filteredXYZ[1] > 0 || filteredXYZ[2] > 0))  ||
+            }
+            // z>x y=0
+            else if ((filteredXYZ[0] > 4 && (filteredXYZ[1]+filteredXYZ[2] > 3) && (filteredXYZ[1] > 0 || filteredXYZ[2] > 0))  ||
                     (filteredXYZ[1] > 4 && (filteredXYZ[0]+filteredXYZ[2] > 3) && (filteredXYZ[0] > 0 || filteredXYZ[2] > 0)) ||
                     (filteredXYZ[2] > 10 && (prevXYZ[0]+prevXYZ[1]+prevXYZ[2] < 5 && (filteredXYZ[1] > 0 || filteredXYZ[2] > 0)))
                     ) {

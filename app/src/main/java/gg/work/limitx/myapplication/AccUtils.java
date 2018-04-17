@@ -115,7 +115,7 @@ public class AccUtils {
                     time = System.currentTimeMillis();
                     sflag = true;
                 }
-            } else {
+            } else if (sflag && System.currentTimeMillis() - time > 200) {
                 /*if(mHandler.obtainMessage(2) != null) {
                     mHandler.removeMessages(2);
                 }

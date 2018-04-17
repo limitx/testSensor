@@ -32,7 +32,7 @@ public class AccUtils {
         void  onMotionChanged(int type);
     }
 
-    public void AccUtils(Context context, MotionListener listener){ //Handler handler ) {
+    public AccUtils(Context context, MotionListener listener){ //Handler handler ) {
         mListener = listener;
         //mHandler = handler;
 

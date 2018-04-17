@@ -32,9 +32,7 @@ public class MainActivityx extends AppCompatActivity implements AccUtils.MotionL
 
 
     TextView tv1;
-
-
-
+    AccUtils test;
 
 
     @Override
@@ -44,6 +42,8 @@ public class MainActivityx extends AppCompatActivity implements AccUtils.MotionL
 
 
         tv1 = findViewById(R.id.textView);
+
+        test = new AccUtils(getApplicationContext(), this);
 
         Button bt1 = findViewById(R.id.bt1);
         bt1.setOnClickListener(new View.OnClickListener() {
@@ -57,18 +57,18 @@ public class MainActivityx extends AppCompatActivity implements AccUtils.MotionL
     @Override
     protected void onResume() {
         super.onResume();
-
+        test.enableAccSensor(true);
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-
+        test.enableAccSensor(false);
     }
 
     @Override
     public void onMotionChanged(int type) {
-
+        mHandler.sendEmptyMessage(type);
     }
 
     Toast toastMessage;
@@ -86,7 +86,7 @@ public class MainActivityx extends AppCompatActivity implements AccUtils.MotionL
                         toastMessage.show();
                     }
 
-                    //tv1.setText(filteredXYZ[0] + " / " + filteredXYZ[2]);
+                    tv1.setText("+++++++");
                     tv1.setTextColor(Color.RED);
                     Log.i(tag, "toastMessage++");
                     break;
@@ -95,14 +95,11 @@ public class MainActivityx extends AppCompatActivity implements AccUtils.MotionL
                         toastMessage.cancel();
                         toastMessage = null;
                     }
+                    tv1.setText("------");
                     tv1.setTextColor(Color.BLACK);
                     Log.i(tag, "toastMessage--");
                     break;
             }
         }
     };
-
-
-
-
 }

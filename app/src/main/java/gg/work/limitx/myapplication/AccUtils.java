@@ -32,9 +32,15 @@ public class AccUtils {
         void  onMotionChanged(int type);
     }
 
-    public AccUtils(Context context, MotionListener listener){ //Handler handler ) {
+    public AccUtils(Context context, MotionListener listener){
         mListener = listener;
-        //mHandler = handler;
+
+        mSensorManager = (SensorManager)context.getSystemService(Context.SENSOR_SERVICE);
+        mSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+    }
+
+    public AccUtils(Context context, Handler handler) {
+        mHandler = handler;
 
         mSensorManager = (SensorManager)context.getSystemService(Context.SENSOR_SERVICE);
         mSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
@@ -93,7 +99,6 @@ public class AccUtils {
             XYZ[1] = k2.kalmanFilter(sqrXYZ[1]);
             XYZ[2] = k3.kalmanFilter(sqrXYZ[2]);
 
-            //mListener.onMotionChanged(1);
 
             if ((XYZ[0] > 4 && (XYZ[1]+XYZ[2] > 2)) ||
                     XYZ[1] > 4 || XYZ[2] > 4) {
@@ -103,18 +108,21 @@ public class AccUtils {
                         mHandler.removeMessages(1);
                     }
                     mHandler.sendEmptyMessage(1);*/
-                    mListener.onMotionChanged(1);
+                    if(mListener != null) {
+                        mListener.onMotionChanged(1);
+                    }
 
                     time = System.currentTimeMillis();
                     sflag = true;
                 }
-            } else {//if (filteredXYZ[0] < 10 && filteredXYZ[2] < 10) {
+            } else {
                 /*if(mHandler.obtainMessage(2) != null) {
                     mHandler.removeMessages(2);
                 }
                 mHandler.sendEmptyMessage(2);*/
-
-                mListener.onMotionChanged(2);
+                if(mListener != null) {
+                    mListener.onMotionChanged(2);
+                }
 
                 time = System.currentTimeMillis();
                 sflag = false;

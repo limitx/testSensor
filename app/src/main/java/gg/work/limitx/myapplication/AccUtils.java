@@ -111,42 +111,22 @@ public class AccUtils {
             filteredXYZ[1] = k2.kalmanFilter(sqrXYZ[1]);
             filteredXYZ[2] = k3.kalmanFilter(sqrXYZ[2]);
 
-            /*if ((filteredXYZ[0] > 4 && (filteredXYZ[1]+filteredXYZ[2] > 2)) ||
-                    (filteredXYZ[1] > 4) || (filteredXYZ[2] > 4)) {
-
-                if (!sflag && System.currentTimeMillis() - time > 200) {
-                    if(mListener != null) {
-                        mListener.onMotionChanged(1);
-                    }
-                    time = System.currentTimeMillis();
-                    sflag = true;
+            if (filteredXYZ[0]+filteredXYZ[1]+filteredXYZ[2] == 0) {
+                if (sflag && System.currentTimeMillis() - time > 200) {
+                    onMotionChanged(false);
                 }
-            } else if (sflag && System.currentTimeMillis() - time > 200) {//if (filteredXYZ[0] < 10 && filteredXYZ[2] < 10) {
-                if(mListener != null) {
-                    mListener.onMotionChanged(2);
-                }
-                time = System.currentTimeMillis();
-                sflag = false;
-            }*/
-
-            if ((filteredXYZ[0] > 4 && (filteredXYZ[1]+filteredXYZ[2] > 3) && (filteredXYZ[1] > 0 || filteredXYZ[2] > 0))  ||
+            } else if ((filteredXYZ[0] > 4 && (filteredXYZ[1]+filteredXYZ[2] > 3) && (filteredXYZ[1] > 0 || filteredXYZ[2] > 0))  ||
                     (filteredXYZ[1] > 4 && (filteredXYZ[0]+filteredXYZ[2] > 3) && (filteredXYZ[0] > 0 || filteredXYZ[2] > 0)) ||
-                    (filteredXYZ[2] > 4 && (filteredXYZ[1]+filteredXYZ[2] > 3) && (filteredXYZ[0] > 0 || filteredXYZ[1] > 0))
+                    (filteredXYZ[2] > 4 && (filteredXYZ[1]+filteredXYZ[2] > 3) && (filteredXYZ[0] > 0 || filteredXYZ[1] > 0)) ||
+                    (filteredXYZ[1] > 10 && (filteredXYZ[1] == 0 || filteredXYZ[2] == 0)) ||
+                    (filteredXYZ[2] > 10 && (filteredXYZ[0] == 0 || filteredXYZ[1] == 0))
                     ) {
 
                 if (!sflag && System.currentTimeMillis() - time > 200) {
-                    if(mListener != null) {
-                        mListener.onMotionChanged(1);
-                    }
-                    time = System.currentTimeMillis();
-                    sflag = true;
+                    onMotionChanged(true);
                 }
             } else if (sflag && System.currentTimeMillis() - time > 200) {//if (filteredXYZ[0] < 10 && filteredXYZ[2] < 10) {
-                if(mListener != null) {
-                    mListener.onMotionChanged(2);
-                }
-                time = System.currentTimeMillis();
-                sflag = false;
+                onMotionChanged(false);
             }
 
             Log.i(tag, "detectPulse++++ " + sflag + " : " +
@@ -154,6 +134,14 @@ public class AccUtils {
                     sqrXYZ[1] + " / " + filteredXYZ[1] + " , " +
                     sqrXYZ[2] + " / " + filteredXYZ[2]);
         }
+    }
+
+    private void onMotionChanged(boolean flag) {
+        if(mListener != null) {
+            mListener.onMotionChanged(flag? 1 :2);
+        }
+        time = System.currentTimeMillis();
+        sflag = flag;
     }
 
     private class kalmanFilterx {

@@ -50,9 +50,9 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private Paint mPaint6 = new Paint();
     private Paint mPaintBlack = new Paint();
     private Canvas canvas;
-    int xx,oldY,oldY1,oldY2,oldY3,oldY4,oldY5;
+    int xx, oldY, oldY1, oldY2, oldY3, oldY4, oldY5;
     // Screen size for Canvas
-    int Height,Width;
+    int Height, Width;
 
 
     TextView tv1;
@@ -66,12 +66,14 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     // ACC algorithm
     private boolean detectStart = false;
-    int[] xyz,prevXYZ,diffXYZ,sqrXYZ,filteredXYZ;
+    int[] xyz, prevXYZ, diffXYZ, sqrXYZ, filteredXYZ;
     private ArrayList filterX = new ArrayList();
     private ArrayList filterY = new ArrayList();
     private ArrayList filterZ = new ArrayList();
-    private static final int filter_size = 8;
-    private static final int filter_d_size = filter_size-1;
+    private static final int filter_size = 4;
+    private static final int filter_d_size = filter_size - 1;
+
+    kalmanFilter k1,k2,k3;
 
 
     @Override
@@ -82,7 +84,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         mSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
 
         //List<Sensor> deviceSensors = mSensorManager.getSensorList(Sensor.TYPE_ALL);
-        mACC = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);//TYPE_LINEAR_ACCELERATION
+        //mACC = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);//TYPE_LINEAR_ACCELERATION
+        mACC = mSensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION);
         mGYR = mSensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
         mROTATE = mSensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR);
 
@@ -90,8 +93,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         // Canvas waveform plot
         DisplayMetrics metrics = new DisplayMetrics();
         getWindowManager().getDefaultDisplay().getMetrics(metrics);
-        Height = (int)(metrics.heightPixels * 0.5);
-        Width = (int)(metrics.widthPixels * 0.8);
+        Height = (int) (metrics.heightPixels * 0.5);
+        Width = (int) (metrics.widthPixels * 0.8);
 
         sfv = findViewById(R.id.sfv);
         sfh = sfv.getHolder();
@@ -115,9 +118,9 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         tv1 = findViewById(R.id.textView);
 
         Button bt1 = findViewById(R.id.bt1);
-        bt1.setOnClickListener(new View.OnClickListener(){
+        bt1.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(View v){
+            public void onClick(View v) {
                 drawThread();
             }
         });
@@ -135,7 +138,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         mSensorManager.registerListener(this, mGYR, SensorManager.SENSOR_DELAY_GAME);
         mSensorManager.registerListener(this, mROTATE, SensorManager.SENSOR_DELAY_GAME);*/
 
-        tv1.setText(mACC.getName() +"  width:"+ Width);
+        tv1.setText(mACC.getName() + "  width:" + Width);
     }
 
     @Override
@@ -153,7 +156,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     @Override
     public final void onSensorChanged(SensorEvent event) {
-        if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
+        //if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {TYPE_LINEAR_ACCELERATION
+        if (event.sensor.getType() == Sensor.TYPE_LINEAR_ACCELERATION) {
             showSensorData(event);
             detectPulse();
         }/* else if (event.sensor.getType() == Sensor.TYPE_GYROSCOPE) {
@@ -164,10 +168,10 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     }
 
     Toast toastMessage;
-    private Handler mHandler = new Handler(){
+    private Handler mHandler = new Handler() {
         @Override
         public void handleMessage(Message msg) {
-            switch(msg.what){
+            switch (msg.what) {
                 case 1:
                     if (toastMessage != null) {
                         toastMessage.cancel();
@@ -178,7 +182,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                         toastMessage.show();
                     }
 
-                    tv1.setText(filteredXYZ[0] +" / "+filteredXYZ[2]);
+                    tv1.setText(filteredXYZ[0] + " / " + filteredXYZ[2]);
                     tv1.setTextColor(Color.RED);
                     Log.i(tag, "toastMessage++");
                     break;
@@ -210,9 +214,9 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         linear_acceleration[1] = event.values[1] - gravity[1];
         linear_acceleration[2] = event.values[2] - gravity[2];
 */
-        xyz[0] = (int)(event.values[0]);
-        xyz[1] = (int)(event.values[1]);
-        xyz[2] = (int)(event.values[2]);
+        xyz[0] = (int) (event.values[0]);
+        xyz[1] = (int) (event.values[1]);
+        xyz[2] = (int) (event.values[2]);
         //Log.i(tag, "showSensorData+ "+ xyz.toString());
     }
 
@@ -222,7 +226,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             @Override
             public void run() {
                 super.run();
-                while(true) {
+                while (true) {
                     //detectPulse();
                     try {
                         drawAll();
@@ -237,7 +241,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     private void drawAll() {
         xx++;
-        canvas = sfh.lockCanvas(new Rect(xx-1, 0, xx, Height));
+        canvas = sfh.lockCanvas(new Rect(xx - 1, 0, xx, Height));
         if (canvas != null) {
 /*
             canvas.drawLine(xx - 1, oldY1, xx, offset1 - xyz[0], mPaint1);
@@ -247,17 +251,17 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             oldY2 = offset1 - xyz[1];
             oldY3 = offset1 - xyz[2];
 */
-            canvas.drawLine(xx - 1, oldY1, xx,offset1 - sqrXYZ[0], mPaint1);
-            canvas.drawLine(xx - 1, oldY2, xx,offset1 - sqrXYZ[1], mPaint2);
-            canvas.drawLine(xx - 1, oldY3, xx,offset1 - sqrXYZ[2], mPaint3);
+            canvas.drawLine(xx - 1, oldY1, xx, offset1 - sqrXYZ[0], mPaint1);
+            canvas.drawLine(xx - 1, oldY2, xx, offset1 - sqrXYZ[1], mPaint2);
+            canvas.drawLine(xx - 1, oldY3, xx, offset1 - sqrXYZ[2], mPaint3);
             oldY1 = offset1 - sqrXYZ[0];
             oldY2 = offset1 - sqrXYZ[1];
             oldY3 = offset1 - sqrXYZ[2];
 
             //++++
-            canvas.drawLine(xx - 1, oldY4, xx,offset2 - filteredXYZ[0], mPaint4);
-            canvas.drawLine(xx - 1, oldY5, xx,offset2 - filteredXYZ[2], mPaint5);
-            canvas.drawLine(0, offset2-50, xx, offset2-50 , mPaint6);
+            canvas.drawLine(xx - 1, oldY4, xx, offset2 - filteredXYZ[0], mPaint4);
+            canvas.drawLine(xx - 1, oldY5, xx, offset2 - filteredXYZ[2], mPaint5);
+            canvas.drawLine(0, offset2 - 50, xx, offset2 - 50, mPaint6);
             oldY4 = offset2 - filteredXYZ[0];
             oldY5 = offset2 - filteredXYZ[2];
 
@@ -266,8 +270,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             //++++Log.i(tag, "draw+ "+xx+"  "+sqrXYZ[0]+" "+sqrXYZ[1]+" "+sqrXYZ[2]);
         }
 
-        if (xx>=Width) {
-            xx=0; //canvas.drawColor(Color.TRANSPARENT,Mode.CLEAR);
+        if (xx >= Width) {
+            xx = 0; //canvas.drawColor(Color.TRANSPARENT,Mode.CLEAR);
             canvas = sfh.lockCanvas(new Rect(0, 0, Width, Height));
             if (canvas != null) {
                 canvas.drawRect(0, 0, Width, Height, mPaintBlack);
@@ -282,22 +286,27 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         prevXYZ = new int[3];
         diffXYZ = new int[3];
         sqrXYZ = new int[3];
-        filteredXYZ  = new int[3];
+        filteredXYZ = new int[3];
         filterX = new ArrayList();
         filterY = new ArrayList();
         filterZ = new ArrayList();
 
-        xx=1;
-        oldY=0;
-        oldY1=0;
-        oldY2=0;
-        oldY3=0;
-        oldY4=0;
-        oldY5=0;
+        k1 = new kalmanFilter();
+        k2 = new kalmanFilter();
+        k3 = new kalmanFilter();
+
+        xx = 1;
+        oldY = 0;
+        oldY1 = 0;
+        oldY2 = 0;
+        oldY3 = 0;
+        oldY4 = 0;
+        oldY5 = 0;
     }
 
     long time = 0;
     boolean sflag = false;
+
     private void detectPulse() {
         if (!detectStart) {
             detectStart = true;
@@ -314,7 +323,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             sqrXYZ[1] = diffXYZ[1] * diffXYZ[1];
             sqrXYZ[2] = diffXYZ[2] * diffXYZ[2];
 
-            if (filterX.size() < filter_size) {
+            /*if (filterX.size() < filter_size) {
                 filterX.add(sqrXYZ[0]);
                 filterY.add(sqrXYZ[1]);
                 filterZ.add(sqrXYZ[2]);
@@ -326,24 +335,30 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 filterY.add(sqrXYZ[1]);
                 filterZ.remove(0);
                 filterZ.add(sqrXYZ[2]);
-            }
+            }*/
 
-            int[] sumXYZ  = new int[3];
-            for(int i = 1; i < filterX.size(); i++) {
-                sumXYZ[0] += (int)filterX.get(i);
-                sumXYZ[1] += (int)filterX.get(i);
-                sumXYZ[2] += (int)filterZ.get(i);
+            /*int[] sumXYZ = new int[3];
+            for (int i = 1; i < filterX.size(); i++) {
+                sumXYZ[0] += (int) filterX.get(i);
+                sumXYZ[1] += (int) filterX.get(i);
+                sumXYZ[2] += (int) filterZ.get(i);
             }
 
             filteredXYZ[0] = sumXYZ[0] / filter_d_size; // divide by filter_d_size
             filteredXYZ[1] = sumXYZ[1] / filter_d_size; // divide by filter_d_size
-            filteredXYZ[2] = sumXYZ[2] / filter_d_size; // divide by filter_d_size
+            filteredXYZ[2] = sumXYZ[2] / filter_d_size; // divide by filter_d_size*/
 
-            if (Math.abs(filteredXYZ[0] - sqrXYZ[0]) > 20 ||
-                    Math.abs(filteredXYZ[1] - sqrXYZ[1]) > 30 ||
-                    Math.abs(filteredXYZ[2] - sqrXYZ[2]) > 15) {
+            filteredXYZ[0] = k1.kalmanFilter(sqrXYZ[0]);
+            filteredXYZ[1] = k2.kalmanFilter(sqrXYZ[1]);
+            filteredXYZ[2] = k3.kalmanFilter(sqrXYZ[2]);
 
-                if (!sflag && System.currentTimeMillis() - time > 250) {
+            /*if ((filteredXYZ[0] > 9 || Math.abs(filteredXYZ[0] - sqrXYZ[0]) > 6) ||
+                    Math.abs(filteredXYZ[1] - sqrXYZ[1]) > 10 ||
+                    Math.abs(filteredXYZ[2] - sqrXYZ[2]) > 6) {*/
+            if ((filteredXYZ[0] > 4 && (filteredXYZ[1]+filteredXYZ[2] > 2)) ||
+                    filteredXYZ[1] > 4 || filteredXYZ[2] > 4) {
+
+                if (!sflag && System.currentTimeMillis() - time > 200) {
                     if (mHandler.obtainMessage(1) != null) {
                         mHandler.removeMessages(1);
                     }
@@ -356,8 +371,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                             sqrXYZ[1]+" / "+filteredXYZ[1]+" , "+
                             sqrXYZ[2]+" / "+filteredXYZ[2]);*/
                 }
-            } else if (sflag && System.currentTimeMillis() - time > 250){//if (filteredXYZ[0] < 10 && filteredXYZ[2] < 10) {
-                if(mHandler.obtainMessage(2) != null) {
+            } else if (sflag && System.currentTimeMillis() - time > 200) {//if (filteredXYZ[0] < 10 && filteredXYZ[2] < 10) {
+                if (mHandler.obtainMessage(2) != null) {
                     mHandler.removeMessages(2);
                 }
                 mHandler.sendEmptyMessage(2);
@@ -365,10 +380,23 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 sflag = false;
             }
 
-            Log.i(tag, "detectPulse++++ "+sflag+" : "+
-                    sqrXYZ[0]+" / "+filteredXYZ[0] +" , "+
-                    sqrXYZ[1]+" / "+filteredXYZ[1]+" , "+
-                    sqrXYZ[2]+" / "+filteredXYZ[2]);
+            Log.i(tag, "detectPulse++++ " + sflag + " : " +
+                    sqrXYZ[0] + " / " + filteredXYZ[0] + " , " +
+                    sqrXYZ[1] + " / " + filteredXYZ[1] + " , " +
+                    sqrXYZ[2] + " / " + filteredXYZ[2]);
+        }
+    }
+
+    private class kalmanFilter {
+        double prevData = 0, p = 10, q = 2, r = 1.5, kGain = 0;
+
+        int kalmanFilter(int inData) {
+            p += q;
+            kGain = p / (p + r);
+            inData = (int) (prevData + (kGain * (((double) (inData) - prevData))));
+            p *= (1 - kGain);
+            prevData = inData;
+            return inData;
         }
     }
 }

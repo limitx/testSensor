@@ -129,9 +129,10 @@ public class AccUtils {
                 sflag = false;
             }*/
 
-            if ((filteredXYZ[0] > 4 && (filteredXYZ[1]+filteredXYZ[2] > 2)) ||
-                    (filteredXYZ[1] > 4 && (filteredXYZ[0]+filteredXYZ[2] > 2)) ||
-                    (filteredXYZ[2] > 4 && (filteredXYZ[1]+filteredXYZ[2] > 2))) {
+            if ((filteredXYZ[0] > 4 && (filteredXYZ[1]+filteredXYZ[2] > 3) && (filteredXYZ[1] > 0 || filteredXYZ[2] > 0))  ||
+                    (filteredXYZ[1] > 4 && (filteredXYZ[0]+filteredXYZ[2] > 3) && (filteredXYZ[0] > 0 || filteredXYZ[2] > 0)) ||
+                    (filteredXYZ[2] > 4 && (filteredXYZ[1]+filteredXYZ[2] > 3) && (filteredXYZ[0] > 0 || filteredXYZ[1] > 0))
+                    ) {
 
                 if (!sflag && System.currentTimeMillis() - time > 200) {
                     if(mListener != null) {

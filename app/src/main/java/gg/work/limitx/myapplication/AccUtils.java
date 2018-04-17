@@ -112,7 +112,7 @@ public class AccUtils {
             filteredXYZ[2] = k3.kalmanFilter(sqrXYZ[2]);
 
             if (filteredXYZ[0]+filteredXYZ[1]+filteredXYZ[2] == 0) {
-                if (sflag && System.currentTimeMillis() - time > 200) {
+                if (sflag && System.currentTimeMillis() - time > 300) {
                     onMotionChanged(false);
                 }
             } else if ((filteredXYZ[0] > 4 && (filteredXYZ[1]+filteredXYZ[2] > 3) && (filteredXYZ[1] > 0 || filteredXYZ[2] > 0))  ||
@@ -122,10 +122,10 @@ public class AccUtils {
                     (filteredXYZ[2] > 10 && (filteredXYZ[0] == 0 || filteredXYZ[1] == 0))
                     ) {
 
-                if (!sflag && System.currentTimeMillis() - time > 200) {
+                if (!sflag && System.currentTimeMillis() - time > 300) {
                     onMotionChanged(true);
                 }
-            } else if (sflag && System.currentTimeMillis() - time > 200) {//if (filteredXYZ[0] < 10 && filteredXYZ[2] < 10) {
+            } else if (sflag && System.currentTimeMillis() - time > 300) {//if (filteredXYZ[0] < 10 && filteredXYZ[2] < 10) {
                 onMotionChanged(false);
             }
 

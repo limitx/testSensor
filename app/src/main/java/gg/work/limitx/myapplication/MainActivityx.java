@@ -23,6 +23,7 @@ import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 
 public class MainActivityx extends AppCompatActivity implements AccUtils.MotionListener {
@@ -34,6 +35,9 @@ public class MainActivityx extends AppCompatActivity implements AccUtils.MotionL
     TextView tv1;
     AccUtils test;
 
+    public static txtRW txtR;
+
+    private static boolean start = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -45,11 +49,22 @@ public class MainActivityx extends AppCompatActivity implements AccUtils.MotionL
 
         test = new AccUtils(getApplicationContext(), this);
 
+        txtR = new txtRW();//++++
+
         Button bt1 = findViewById(R.id.bt1);
         bt1.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-
+                /*if(!start) {
+                    txtR = new txtRW();//++++
+                    SimpleDateFormat sDateFormat = new SimpleDateFormat("MMddhhmm");
+                    String date = sDateFormat.format(new java.util.Date());
+                    txtR.txtRRini("ACC" + date + ".txt");
+                    start = true;
+                } else {
+                    txtR.txtRRclose();
+                    start = false;
+                }*/
             }
         });
     }
@@ -64,13 +79,26 @@ public class MainActivityx extends AppCompatActivity implements AccUtils.MotionL
     protected void onPause() {
         super.onPause();
         test.enableAccSensor(false);
+
+        txtR.txtRRclose();//++++
     }
+
 
     @Override
     public void onMotionChanged(int type) {
         mHandler.sendEmptyMessage(type);
     }
 
+    public static void tttt(SensorEvent event) {
+        if (start && txtR != null) {
+            int[] xyz = new int[3];
+            xyz[0] = (int)(event.values[0]*2);
+            xyz[1] = (int)(event.values[1]*2);
+            xyz[2] = (int)(event.values[2]*2);
+            String tmp = String.valueOf(event.values[0]) +" "+String.valueOf(event.values[1]) +" "+ String.valueOf(event.values[2]);
+            txtR.txtWrr(tmp);
+        }
+    }
     Toast toastMessage;
     private Handler mHandler = new Handler() {
         @Override

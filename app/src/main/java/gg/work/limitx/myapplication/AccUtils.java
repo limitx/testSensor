@@ -43,6 +43,8 @@ public class AccUtils {
         mSensorManager = (SensorManager)context.getSystemService(Context.SENSOR_SERVICE);
         mSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION);
         mSensorR = mSensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR);
+
+
     }
 
     public AccUtils(Context context, Handler handler) {
@@ -83,6 +85,9 @@ public class AccUtils {
         public void onSensorChanged(SensorEvent event) {
             if (event.sensor.getType() == Sensor.TYPE_LINEAR_ACCELERATION) {
                 detectPulse(event);
+
+                //+++++
+                //MainActivityx.tttt(event);
             }
         }
 
@@ -93,9 +98,9 @@ public class AccUtils {
 
     private void detectPulse(SensorEvent event) {
         int[] xyz = new int[3];
-        xyz[0] = (int)(event.values[0]*2);
-        xyz[1] = (int)(event.values[1]*2);
-        xyz[2] = (int)(event.values[2]*2);
+        xyz[0] = (int)(event.values[0]*4);
+        xyz[1] = (int)(event.values[1]*4);
+        xyz[2] = (int)(event.values[2]*4);
 
         //Log.i(tag, "detectPulse raw " + xyz[0]+" "+xyz[1]+" "+xyz[2]);
 
@@ -156,14 +161,17 @@ public class AccUtils {
                     onMotionChanged(false);
                 }
             } else if (
-                    (filteredXYZ[1] == 0 && sumXYZ[0] < 6 && sumXYZ[2] > 10 && sumXYZ[0] > sumXYZ[1]) ||
+                    /*(filteredXYZ[1] == 0 && sumXYZ[0] < 6 && sumXYZ[2] > 10 && sumXYZ[0] > sumXYZ[1]) ||
                     (xyz[1] < 0 && sumXYZ[0] == 0 && sumXYZ[1] == 0 && sumXYZ[2] > 8) ||
-                    (xyz[1] < 0 && sumXYZ[0] == 1 && sumXYZ[1] == 1 && sumXYZ[2] > 20)
+                    (xyz[1] < 0 && sumXYZ[0] == 1 && sumXYZ[1] == 1 && sumXYZ[2] > 20)*/
                     //
                     //++++
                     /*(filteredXYZ[0] > 4 && (filteredXYZ[1]+filteredXYZ[2] > 3) && (filteredXYZ[1] > 0 || filteredXYZ[2] > 0))  ||
                     (filteredXYZ[1] > 4 && (filteredXYZ[0]+filteredXYZ[2] > 3) && (filteredXYZ[0] > 0 || filteredXYZ[2] > 0)) ||
                     (filteredXYZ[2] > 10 && (prevXYZ[0]+prevXYZ[1]+prevXYZ[2] < 5 && (filteredXYZ[1] > 0 || filteredXYZ[2] > 0)))*/
+                    //0 1 5 / 0,1,1 / 0,1,9
+                    ((xyz[2] > 4 && xyz[2] < 15) && (xyz[1] > -4 && xyz[1] < 2) && (xyz[0] > -9 && xyz[0] < 3) &&
+                            (sumXYZ[2] > 8 && sumXYZ[2] < 19) && (sumXYZ[1] < 3 && sumXYZ[1] > -1) && (sumXYZ[0] > -1 && sumXYZ[0] < 7))
                     ) {
 
                 if (!sflag && System.currentTimeMillis() - time > 400) {
@@ -177,6 +185,7 @@ public class AccUtils {
             prevXYZ[0] = xyz[0];
             prevXYZ[1] = xyz[1];
             prevXYZ[2] = xyz[2];
+
 
             if ((filteredXYZ[0]+filteredXYZ[1]+filteredXYZ[2] != 0)) {
                 Log.i(tag, "dPulse0 "+sflag +" "+ xyz[0] + " " + xyz[1] + " " + xyz[2] +

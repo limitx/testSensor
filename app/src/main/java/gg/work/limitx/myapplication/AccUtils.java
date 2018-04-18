@@ -144,25 +144,26 @@ public class AccUtils {
             filteredXYZ[2] = sqrXYZ[2];
 
 
-            if ((filteredXYZ[0]+filteredXYZ[1]+filteredXYZ[2] == 0) ||
-                    (filteredXYZ[0] > filteredXYZ[2] && filteredXYZ[1] < 5) ||
+            if ((filteredXYZ[0]+filteredXYZ[1]+filteredXYZ[2] == 0)
+                    //++++
+                    /*|| (filteredXYZ[0] > filteredXYZ[2] && filteredXYZ[1] < 5) ||
                     (filteredXYZ[1] > filteredXYZ[0] && filteredXYZ[2] < 2) ||
                     (filteredXYZ[2] > filteredXYZ[0] && filteredXYZ[1] < 2) ||
-                    (filteredXYZ[2] > 15 && filteredXYZ[2] < 100 && filteredXYZ[1] < 2 && filteredXYZ[1] < 2) ||
-                    (filteredXYZ[1] < 2 && filteredXYZ[0] > 2 && filteredXYZ[2] > 2)
+                    (filteredXYZ[0] > 15 && filteredXYZ[0] < 100 && filteredXYZ[1] < 2 && filteredXYZ[2] < 2) ||
+                    (filteredXYZ[1] < 2 && filteredXYZ[0] > 2 && filteredXYZ[2] > 2)*/
                     ) {
                 if (sflag && System.currentTimeMillis() - time > 200) {
                     onMotionChanged(false);
                 }
             } else if (
-                    /*(filteredXYZ[1] == 0 && sumXYZ[0] < 6 && sumXYZ[2] > 10 && sumXYZ[0] > sumXYZ[1]) ||
+                    (filteredXYZ[1] == 0 && sumXYZ[0] < 6 && sumXYZ[2] > 10 && sumXYZ[0] > sumXYZ[1]) ||
                     (xyz[1] < 0 && sumXYZ[0] == 0 && sumXYZ[1] == 0 && sumXYZ[2] > 8) ||
-                    (xyz[1] < 0 && sumXYZ[0] == 1 && sumXYZ[1] == 1 && sumXYZ[2] > 20)*/
+                    (xyz[1] < 0 && sumXYZ[0] == 1 && sumXYZ[1] == 1 && sumXYZ[2] > 20)
                     //
                     //++++
-                    (filteredXYZ[0] > 4 && (filteredXYZ[1]+filteredXYZ[2] > 3) && (filteredXYZ[1] > 0 || filteredXYZ[2] > 0))  ||
+                    /*(filteredXYZ[0] > 4 && (filteredXYZ[1]+filteredXYZ[2] > 3) && (filteredXYZ[1] > 0 || filteredXYZ[2] > 0))  ||
                     (filteredXYZ[1] > 4 && (filteredXYZ[0]+filteredXYZ[2] > 3) && (filteredXYZ[0] > 0 || filteredXYZ[2] > 0)) ||
-                    (filteredXYZ[2] > 10 && (prevXYZ[0]+prevXYZ[1]+prevXYZ[2] < 5 && (filteredXYZ[1] > 0 || filteredXYZ[2] > 0)))
+                    (filteredXYZ[2] > 10 && (prevXYZ[0]+prevXYZ[1]+prevXYZ[2] < 5 && (filteredXYZ[1] > 0 || filteredXYZ[2] > 0)))*/
                     ) {
 
                 if (!sflag && System.currentTimeMillis() - time > 400) {

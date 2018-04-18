@@ -23,9 +23,9 @@ public class AccUtils {
     private Sensor mSensor,mSensorR;
 
     //kalmanFilterx k1,k2,k3;
-    /*private ArrayList filterX;
+    private ArrayList filterX;
     private ArrayList filterY;
-    private ArrayList filterZ;*/
+    private ArrayList filterZ;
 
     int[] prevXYZ,diffXYZ,sqrXYZ,filteredXYZ;
 
@@ -63,9 +63,9 @@ public class AccUtils {
         /*k1 = new kalmanFilterx();
         k2 = new kalmanFilterx();
         k3 = new kalmanFilterx();*/
-        /*filterX = new ArrayList();
+        filterX = new ArrayList();
         filterY = new ArrayList();
-        filterZ = new ArrayList();*/
+        filterZ = new ArrayList();
 
         synchronized (this) {
             if (enable) {
@@ -118,7 +118,7 @@ public class AccUtils {
             filteredXYZ[1] = k2.kalmanFilter(sqrXYZ[1]);
             filteredXYZ[2] = k3.kalmanFilter(sqrXYZ[2]);*/
 
-            /*if (filterX.size() < 3) {
+            if (filterX.size() < 3) {
                 filterX.add(xyz[0]);
                 filterY.add(xyz[1]);
                 filterZ.add(xyz[2]);
@@ -137,7 +137,7 @@ public class AccUtils {
                 sumXYZ[0] += Math.abs((int)filterX.get(i));
                 sumXYZ[1] += Math.abs((int)filterY.get(i));
                 sumXYZ[2] += Math.abs((int)filterZ.get(i));
-            }*/
+            }
 
             filteredXYZ[0] = sqrXYZ[0];
             filteredXYZ[1] = sqrXYZ[1];
@@ -148,7 +148,7 @@ public class AccUtils {
                     (filteredXYZ[0] > filteredXYZ[2] && filteredXYZ[1] < 5) ||
                     (filteredXYZ[1] > filteredXYZ[0] && filteredXYZ[2] < 2) ||
                     (filteredXYZ[2] > filteredXYZ[0] && filteredXYZ[1] < 2) ||
-
+                    (filteredXYZ[2] > 15 && filteredXYZ[2] < 100 && filteredXYZ[1] < 2 && filteredXYZ[1] < 2) ||
                     (filteredXYZ[1] < 2 && filteredXYZ[0] > 2 && filteredXYZ[2] > 2)
                     ) {
                 if (sflag && System.currentTimeMillis() - time > 200) {
@@ -165,7 +165,7 @@ public class AccUtils {
                     (filteredXYZ[2] > 10 && (prevXYZ[0]+prevXYZ[1]+prevXYZ[2] < 5 && (filteredXYZ[1] > 0 || filteredXYZ[2] > 0)))
                     ) {
 
-                if (!sflag && System.currentTimeMillis() - time > 200) {
+                if (!sflag && System.currentTimeMillis() - time > 400) {
                     onMotionChanged(true);
                     Log.i(tag, "dPulse+ " + xyz[0]+" "+xyz[1]+" "+xyz[2] +" ,"+filteredXYZ[0]+","+filteredXYZ[1]+","+filteredXYZ[2]);
                 }
@@ -177,15 +177,15 @@ public class AccUtils {
             prevXYZ[1] = xyz[1];
             prevXYZ[2] = xyz[2];
 
-            /*if ((filteredXYZ[0]+filteredXYZ[1]+filteredXYZ[2] != 0)) {
-                Log.i(tag, "dPulse0 "+sflag + xyz[0] + " " + xyz[1] + " " + xyz[2] +
+            if ((filteredXYZ[0]+filteredXYZ[1]+filteredXYZ[2] != 0)) {
+                Log.i(tag, "dPulse0 "+sflag +" "+ xyz[0] + " " + xyz[1] + " " + xyz[2] +
                         " / " + filteredXYZ[0] + "," + filteredXYZ[1] + "," + filteredXYZ[2] +
                         " / " + sumXYZ[0] + "," + sumXYZ[1] + "," + sumXYZ[2]);
-            }*/
-            if ((filteredXYZ[0]+filteredXYZ[1]+filteredXYZ[2] != 0)) {
+            }
+            /*if ((filteredXYZ[0]+filteredXYZ[1]+filteredXYZ[2] != 0)) {
                 Log.i(tag, "dPulse0 "+sflag + xyz[0] + " " + xyz[1] + " " + xyz[2] +
                         " / " + filteredXYZ[0] + "," + filteredXYZ[1] + "," + filteredXYZ[2]);
-            }
+            }*/
         }
     }
 

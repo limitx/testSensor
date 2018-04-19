@@ -255,10 +255,10 @@ public class ECGExample extends Activity implements AccUtils.MotionListener {
     }
 
     @Override
-    public void onMotionChanged(SensorEvent event) {
-        int tmp = (int)(event.values[0] * 8);
+    public void onMotionChanged(int event) {
+        int tmp = event;
         ecgSeries.addPt(tmp);
-        Log.i("ECGExample", "onMotionChanged");
+        Log.i("ECGExample", "onMotionChanged " + tmp);
     }
 
     @Override

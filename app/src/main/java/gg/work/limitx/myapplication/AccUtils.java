@@ -84,10 +84,14 @@ public class AccUtils {
     SensorEventListener mSensorListener = new SensorEventListener() {
         public void onSensorChanged(SensorEvent event) {
             if (event.sensor.getType() == Sensor.TYPE_LINEAR_ACCELERATION) {
-                detectPulse(event);
+                ////detectPulse(event);
 
                 //+++++
                 //MainActivityx.tttt(event);
+
+                if(mListener != null) {
+                    mListener.onMotionChanged((int)(event.values[0]*4));
+                }
             }
         }
 

@@ -164,14 +164,22 @@ public class AccUtils {
                     /*(filteredXYZ[1] == 0 && sumXYZ[0] < 6 && sumXYZ[2] > 10 && sumXYZ[0] > sumXYZ[1]) ||
                     (xyz[1] < 0 && sumXYZ[0] == 0 && sumXYZ[1] == 0 && sumXYZ[2] > 8) ||
                     (xyz[1] < 0 && sumXYZ[0] == 1 && sumXYZ[1] == 1 && sumXYZ[2] > 20)*/
-                    //
-                    //++++
-                    /*(filteredXYZ[0] > 4 && (filteredXYZ[1]+filteredXYZ[2] > 3) && (filteredXYZ[1] > 0 || filteredXYZ[2] > 0))  ||
-                    (filteredXYZ[1] > 4 && (filteredXYZ[0]+filteredXYZ[2] > 3) && (filteredXYZ[0] > 0 || filteredXYZ[2] > 0)) ||
-                    (filteredXYZ[2] > 10 && (prevXYZ[0]+prevXYZ[1]+prevXYZ[2] < 5 && (filteredXYZ[1] > 0 || filteredXYZ[2] > 0)))*/
+
+                    //++++DUT is flat on table and user grab it up.
                     //0 1 5 / 0,1,1 / 0,1,9
-                    ((xyz[2] > 4 && xyz[2] < 15) && (xyz[1] > -4 && xyz[1] < 2) && (xyz[0] > -9 && xyz[0] < 3) &&
-                            (sumXYZ[2] > 8 && sumXYZ[2] < 19) && (sumXYZ[1] < 3 && sumXYZ[1] > -1) && (sumXYZ[0] > -1 && sumXYZ[0] < 7))
+                    //-5 1 11 / 16,1,4 / 6,1,20
+                    //1 -3 19 / 1,9,196 / 1,3,24
+                    //0 -4 19 / 16,1,9 / 4,7,35
+                    //3 -2 10 / 16,4,36 / 4,6,14
+                    ((xyz[2] > 4 && xyz[2] < 23) && (xyz[1] > -5 && xyz[1] < 2) && (xyz[0] > -9 && xyz[0] < 4) &&
+                            (sumXYZ[2] > 3 ? ((sumXYZ[2] - sumXYZ[0]) > 4) : true) &&
+                            (sumXYZ[2] > 3 ? ((sumXYZ[2] - sumXYZ[1]) > 4) : true) &&
+                            (sumXYZ[2] > 4) && (sumXYZ[1] < 7 && sumXYZ[1] > -1) && (sumXYZ[0] > -1 && sumXYZ[0] < 7))
+
+
+                    //++++DUT is held by user and exchanged to another hand.
+
+
                     ) {
 
                 if (!sflag && System.currentTimeMillis() - time > 400) {

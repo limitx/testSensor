@@ -11,31 +11,31 @@ import android.util.Log;
 import java.util.ArrayList;
 
 public class AccUtils {
-
     private static final String tag = "AccUtils";
 
     // ACC algorithm
     private boolean detectStart;
     private static boolean sflag;
     private long time = 0;
+    private ArrayList filterX;
+    private ArrayList filterY;
+    private ArrayList filterZ;
+    int[] prevXYZ,diffXYZ,sqrXYZ,filteredXYZ;
+    private static final int time_interval = 100; //100ms
+    private static final double upper_threshold = 18;// 9.8 + x
+    private static final double lower_threshold = 5.8;// 9.8 -x
 
     private SensorManager mSensorManager;
     private Sensor mSensor,mSensorLINEAR;
 
-    //kalmanFilterx k1,k2,k3;
-    private ArrayList filterX;
-    private ArrayList filterY;
-    private ArrayList filterZ;
-
-    int[] prevXYZ,diffXYZ,sqrXYZ,filteredXYZ;
-
     private Handler mHandler;
 
+    //+
     private MotionListener mListener;
-
     public interface MotionListener {
         void  onMotionChanged(int type);
     }
+    //-
 
     public AccUtils(Context context, MotionListener listener){
         mListener = listener;
@@ -43,9 +43,6 @@ public class AccUtils {
         mSensorManager = (SensorManager)context.getSystemService(Context.SENSOR_SERVICE);
         mSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
         mSensorLINEAR = mSensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION);
-        //mSensorR = mSensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR);
-
-
     }
 
     public AccUtils(Context context, Handler handler) {
@@ -64,9 +61,6 @@ public class AccUtils {
         diffXYZ = new int[3];
         sqrXYZ = new int[3];
         filteredXYZ = new int[3];
-        /*k1 = new kalmanFilterx();
-        k2 = new kalmanFilterx();
-        k3 = new kalmanFilterx();*/
         filterX = new ArrayList();
         filterY = new ArrayList();
         filterZ = new ArrayList();
@@ -85,12 +79,8 @@ public class AccUtils {
 
     SensorEventListener mSensorListener = new SensorEventListener() {
         public void onSensorChanged(SensorEvent event) {
-            //if (event.sensor.getType() == Sensor.TYPE_LINEAR_ACCELERATION) {
             if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
                 detectOrientation(event);
-                //+++++
-                //MainActivityx.tttt(event);
-
                 /*if(mListener != null) {
                     mListener.onMotionChanged((int)(event.values[0]*4));
                 }*/
@@ -105,7 +95,14 @@ public class AccUtils {
         }
     };
 
-    //ORIENTATION_UNKNOWN;
+    private void onMotionChanged(boolean flag) {
+        if(mListener != null) {
+            mListener.onMotionChanged(flag? 1 :2);
+        }
+        time = System.currentTimeMillis();
+        sflag = flag;
+    }
+
     private void detectOrientation(SensorEvent event) {
         float[] values = event.values;
         int[] orientationXYZ = new int[3];
@@ -113,8 +110,10 @@ public class AccUtils {
         float Y = -values[1];
         float Z = -values[2];
         float magnitudeXY = X*X + Y*Y;
+        float magnitudeXZ = X * X + Z * Z;
+        float magnitudeYZ = Y * Y + Z * Z;
+        double threshold = Math.sqrt((X * X + Y * Y + Z * Z));
 
-        // Don't trust the angle if the magnitude is small compared to the y value
         if (magnitudeXY * 4 >= Z * Z) {
             float OneEightyOverPi = 57.29577957855f;
             float angle = (float) Math.atan2(-Y, X) * OneEightyOverPi;
@@ -126,10 +125,8 @@ public class AccUtils {
             while (orientationXYZ[0] < 0) {
                 orientationXYZ[0] += 360;
             }
-            //Log.i(tag, "detectOriention+ XY " + orientation);
         }
-        float magnitudeYZ = Y * Y + Z * Z;
-        // Don't trust the angle if the magnitude is small compared to the y value
+
         if (magnitudeYZ * 4 >= X * X) {
             float OneEightyOverPi = 57.29577957855f;
             float angle = (float) Math.atan2(-Y, Z) * OneEightyOverPi;
@@ -141,11 +138,8 @@ public class AccUtils {
             while (orientationXYZ[1] < 0) {
                 orientationXYZ[1] += 360;
             }
-            //Log.i(tag, "detectOriention+ YZ " + orientation);
         }
 
-        float magnitudeXZ = X * X + Z * Z;
-        // Don't trust the angle if the magnitude is small compared to the y value
         if (magnitudeXZ * 4 >= Y * Y) {
             float OneEightyOverPi = 57.29577957855f;
             float angle = (float) Math.atan2(-Y, Z) * OneEightyOverPi;
@@ -158,13 +152,13 @@ public class AccUtils {
                 orientationXYZ[2] += 360;
             }
         }
+
         //180 230 230
         //0 270 270
         //360  320 320
         //YZ 0~20 340~360
         //XY 45~135 220~320
         //XZ 45~135 220~320
-        double threshold = Math.sqrt((X * X + Y * Y + Z * Z));
         if (orientationXYZ[1] == orientationXYZ[2]) {
             boolean flag = false;
             if ( ((orientationXYZ[1] > 270)? (orientationXYZ[0] < 315 && orientationXYZ[0] > 45) : true) &&
@@ -173,24 +167,20 @@ public class AccUtils {
                                     (filteredXYZ[2] > 3*filteredXYZ[0] && filteredXYZ[2] > 35))
                     ) {
 
-                if (!sflag && System.currentTimeMillis() - time > 100) {
+                if (!sflag && System.currentTimeMillis() - time > time_interval) {
                     onMotionChanged(true);
-                    Log.i(tag, "detectOriention+ orientation  : "+orientationXYZ[0] +"  "+ orientationXYZ[1]);
+                    //Log.i(tag, "detectOriention+ orientation  : "+orientationXYZ[0] +"  "+ orientationXYZ[1]);
                     //Log.i(tag, "detectOriention+  : "+threshold+" = "+ prevXYZ[0] +" "+ prevXYZ[1] +" "+ prevXYZ[2]);
-                    Log.i(tag, "detectOriention+  "+sflag+" : "+ filteredXYZ[0] +" "+ filteredXYZ[1] +" "+ filteredXYZ[2]);
+                    //Log.i(tag, "detectOriention+  "+sflag+" : "+ filteredXYZ[0] +" "+ filteredXYZ[1] +" "+ filteredXYZ[2]);
                 }
-            } else if(threshold > 18 || threshold < 3.8) {
-                //float magnitudeXZ = X * X + Z * Z;
-                //if (magnitudeXZ * 4 >= Y * Y) {
-                    if (!sflag && System.currentTimeMillis() - time > 100) {
-                        onMotionChanged(true);
-
-                        Log.i(tag, "detectOriention+threshold  : " + threshold + " = " + prevXYZ[0] + " " + prevXYZ[1] + " " + prevXYZ[2]);
-                        Log.i(tag, "detectOriention+threshold  " + sflag + " : " + filteredXYZ[0] + " " + filteredXYZ[1] + " " + filteredXYZ[2]);
-                    }
-                //}
+            } else if(threshold > upper_threshold || threshold < lower_threshold) {
+                if (!sflag && System.currentTimeMillis() - time > time_interval) {
+                    onMotionChanged(true);
+                    //Log.i(tag, "detectOriention+threshold  : " + threshold + " = " + prevXYZ[0] + " " + prevXYZ[1] + " " + prevXYZ[2]);
+                    //Log.i(tag, "detectOriention+threshold  " + sflag + " : " + filteredXYZ[0] + " " + filteredXYZ[1] + " " + filteredXYZ[2]);
+                }
             } else {
-                if (sflag && System.currentTimeMillis() - time > 100) {
+                if (sflag && System.currentTimeMillis() - time > time_interval) {
                     onMotionChanged(false);
                 }
             }
@@ -199,7 +189,7 @@ public class AccUtils {
                 Log.i(tag, "detectOriention+  " + orientationXYZ[0] + " " + orientationXYZ[1] + " " + orientationXYZ[2]);
             }*/
         } else {
-            if (sflag && System.currentTimeMillis() - time > 100) {
+            if (sflag && System.currentTimeMillis() - time > time_interval) {
                 onMotionChanged(false);
             }
             //Log.i(tag, "detectOriention-  ");
@@ -211,8 +201,6 @@ public class AccUtils {
         xyz[0] = (int) (event.values[0] * 4);
         xyz[1] = (int) (event.values[1] * 4);
         xyz[2] = (int) (event.values[2] * 4);
-
-        //Log.i(tag, "detectPulse raw " + xyz[0]+" "+xyz[1]+" "+xyz[2]);
 
         if (!detectStart) {
             detectStart = true;
@@ -241,8 +229,6 @@ public class AccUtils {
         xyz[0] = (int)(event.values[0]*4);
         xyz[1] = (int)(event.values[1]*4);
         xyz[2] = (int)(event.values[2]*4);
-
-        //Log.i(tag, "detectPulse raw " + xyz[0]+" "+xyz[1]+" "+xyz[2]);
 
         if (!detectStart) {
             detectStart = true;
@@ -288,7 +274,6 @@ public class AccUtils {
             filteredXYZ[1] = sqrXYZ[1];
             filteredXYZ[2] = sqrXYZ[2];
 
-
             if ((filteredXYZ[0]+filteredXYZ[1]+filteredXYZ[2] == 0)
                     //++++
                     /*|| (filteredXYZ[0] > filteredXYZ[2] && filteredXYZ[1] < 5) ||
@@ -333,27 +318,6 @@ public class AccUtils {
                 Log.i(tag, "dPulse0 "+sflag + xyz[0] + " " + xyz[1] + " " + xyz[2] +
                         " / " + filteredXYZ[0] + "," + filteredXYZ[1] + "," + filteredXYZ[2]);
             }*/
-        }
-    }
-
-    private void onMotionChanged(boolean flag) {
-        if(mListener != null) {
-            mListener.onMotionChanged(flag? 1 :2);
-        }
-        time = System.currentTimeMillis();
-        sflag = flag;
-    }
-
-    private class kalmanFilterx {
-        double prevData = 0, p = 10, q = 2, r = 1.5, kGain = 0;
-
-        int kalmanFilter(int inData) {
-            p += q;
-            kGain = p / (p + r);
-            inData = (int) (prevData + (kGain * (((double) (inData) - prevData))));
-            p *= (1 - kGain);
-            prevData = inData;
-            return inData;
         }
     }
 }

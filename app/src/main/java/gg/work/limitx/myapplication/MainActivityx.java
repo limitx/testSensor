@@ -16,6 +16,7 @@ import android.os.Message;
 import android.support.v7.app.AppCompatActivity;
 import android.util.DisplayMetrics;
 import android.util.Log;
+import android.view.OrientationEventListener;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
@@ -67,6 +68,25 @@ public class MainActivityx extends AppCompatActivity implements AccUtils.MotionL
                 }*/
             }
         });
+
+        /*OrientationEventListener mOrientationListener = new OrientationEventListener(this,
+                SensorManager.SENSOR_DELAY_NORMAL) {
+
+            @Override
+            public void onOrientationChanged(int orientation) {
+                Log.v("++++",
+                        "Orientation changed to " + orientation);
+
+            }
+        };
+
+        if (mOrientationListener.canDetectOrientation() == true) {
+            Log.v("++++", "Can detect orientation");
+            mOrientationListener.enable();
+        } else {
+            Log.v("++++", "Cannot detect orientation");
+            mOrientationListener.disable();
+        }*/
     }
 
     @Override

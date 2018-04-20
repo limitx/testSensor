@@ -5,13 +5,18 @@ buildscript {
     repositories {
         google()
         jcenter()
+        mavenCentral()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:3.1.0'
+        classpath 'com.android.tools.build:gradle:3.1.1'
         
 
         // NOTE: Do not place your application dependencies here; they belong
         // in the individual module build.gradle files
+        classpath 'com.github.dcendents:android-maven-gradle-plugin:1.5'
+        classpath 'com.jfrog.bintray.gradle:gradle-bintray-plugin:1.7.3'
+        classpath 'com.vanniktech:gradle-android-junit-jacoco-plugin:0.6.0'
+        classpath 'org.kt3k.gradle.plugin:coveralls-gradle-plugin:2.6.3'
     }
 }
 
@@ -20,6 +25,14 @@ allprojects {
         google()
         jcenter()
     }
+}
+
+ext {
+    theCompileSdkVersion = 26
+    theTargetSdkVersion = 26
+    theMinSdkVersion = 5
+    theVersionName = '1.5.5'
+    theVersionCode = 0
 }
 
 task clean(type: Delete) {

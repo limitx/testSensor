@@ -9,6 +9,10 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.InputStreamReader;
 
+/**
+ * Created by minche_li on 2018/04
+ */
+
 public class txtRW {
 
     private static FileOutputStream fosGR,fosGB,fosGK;

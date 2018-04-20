@@ -10,6 +10,10 @@ import android.util.Log;
 
 import java.util.ArrayList;
 
+/**
+ * Created by minche_li on 2018/04
+ */
+
 public class AccUtils {
     private static final String tag = "AccUtils";
 

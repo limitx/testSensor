@@ -27,6 +27,10 @@ import android.widget.Toast;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 
+/**
+ * Created by minche_li on 2018/04
+ */
+
 public class MainActivityx extends AppCompatActivity implements AccUtils.MotionListener {
 
     private final String tag = "MainActivity";

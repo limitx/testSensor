@@ -25,6 +25,10 @@ import android.widget.Toast;
 
 import java.util.ArrayList;
 
+/**
+ * Created by minche_li on 2018/04
+ */
+
 public class MainActivity extends AppCompatActivity implements SensorEventListener {
 
     private final String tag = "MainActivity";

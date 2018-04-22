@@ -27,7 +27,7 @@ public class AccUtils {
     int[] prevXYZ,diffXYZ,sqrXYZ,filteredXYZ;
     private static final int time_interval = 100; //100ms
     private static final double upper_threshold = 18;// 9.8 + x
-    private static final double lower_threshold = 5.8;// 9.8 -x
+    private static final double lower_threshold = 5;// 9.8 -x
 
     private SensorManager mSensorManager;
     private Sensor mSensor,mSensorLINEAR;
@@ -107,6 +107,7 @@ public class AccUtils {
         sflag = flag;
     }
 
+    static final float OneEightyOverPi = 57.29577957855f;
     private void detectOrientation(SensorEvent event) {
         float[] values = event.values;
         int[] orientationXYZ = new int[3];
@@ -119,7 +120,6 @@ public class AccUtils {
         double threshold = Math.sqrt((X * X + Y * Y + Z * Z));
 
         if (magnitudeXY * 4 >= Z * Z) {
-            float OneEightyOverPi = 57.29577957855f;
             float angle = (float) Math.atan2(-Y, X) * OneEightyOverPi;
             orientationXYZ[0] = 90 - (int) Math.round(angle);
             // normalize to 0 - 359 range
@@ -132,7 +132,6 @@ public class AccUtils {
         }
 
         if (magnitudeYZ * 4 >= X * X) {
-            float OneEightyOverPi = 57.29577957855f;
             float angle = (float) Math.atan2(-Y, Z) * OneEightyOverPi;
             orientationXYZ[1] = 90 - (int) Math.round(angle);
             // normalize to 0 - 359 range
@@ -145,7 +144,6 @@ public class AccUtils {
         }
 
         if (magnitudeXZ * 4 >= Y * Y) {
-            float OneEightyOverPi = 57.29577957855f;
             float angle = (float) Math.atan2(-Y, Z) * OneEightyOverPi;
             orientationXYZ[2] = 90 - (int) Math.round(angle);
             // normalize to 0 - 359 range
@@ -164,11 +162,12 @@ public class AccUtils {
         //XY 45~135 220~320
         //XZ 45~135 220~320
         if (orientationXYZ[1] == orientationXYZ[2]) {
-            boolean flag = false;
-            if ( ((orientationXYZ[1] > 270)? (orientationXYZ[0] < 315 && orientationXYZ[0] > 45) : true) &&
+            if (orientationXYZ[0] == 0 &&
+                    Math.abs(Z) > 8 && Math.abs(Y) < 3 && Math.abs(X) < 3 &&
                     (((orientationXYZ[1] < 315 && orientationXYZ[1] > 225) ||
                             (orientationXYZ[1] > 45 && orientationXYZ[1] < 135)) &&
-                                    (filteredXYZ[2] > 3*filteredXYZ[0] && filteredXYZ[2] > 35))
+                            (filteredXYZ[2] > 2*filteredXYZ[0] &&
+                                    filteredXYZ[2] > 2*filteredXYZ[1] && filteredXYZ[2] >= 9))
                     ) {
 
                 if (!sflag && System.currentTimeMillis() - time > time_interval) {
@@ -180,20 +179,30 @@ public class AccUtils {
             } else if(threshold > upper_threshold || threshold < lower_threshold) {
                 if (!sflag && System.currentTimeMillis() - time > time_interval) {
                     onMotionChanged(true);
-                    //Log.i(tag, "detectOriention+threshold  : " + threshold + " = " + prevXYZ[0] + " " + prevXYZ[1] + " " + prevXYZ[2]);
+                    Log.i(tag, "+threshold  : " + threshold + " = " + prevXYZ[0] + " " + prevXYZ[1] + " " + prevXYZ[2]);
                     //Log.i(tag, "detectOriention+threshold  " + sflag + " : " + filteredXYZ[0] + " " + filteredXYZ[1] + " " + filteredXYZ[2]);
+
                 }
             } else {
                 if (sflag && System.currentTimeMillis() - time > time_interval) {
                     onMotionChanged(false);
                 }
             }
-            /*if (filteredXYZ[0]+filteredXYZ[1]+filteredXYZ[2] != 0) {
-                //Log.i(tag, "detectOriention+  "+flag+" : "+ filteredXYZ[0] +" "+ filteredXYZ[1] +" "+ filteredXYZ[2]);
+            if (filteredXYZ[0]+filteredXYZ[1]+filteredXYZ[2] != 0) {
+                Log.i(tag, "detectOriention+  "+sflag+" : "+ filteredXYZ[0] +" "+ filteredXYZ[1] +" "+ filteredXYZ[2]);
                 Log.i(tag, "detectOriention+  " + orientationXYZ[0] + " " + orientationXYZ[1] + " " + orientationXYZ[2]);
-            }*/
+                Log.i(tag, "detectOriention+  " + X + " " + Y + " " + Z);
+            }
         } else {
-            if (sflag && System.currentTimeMillis() - time > time_interval) {
+            if(threshold > upper_threshold || threshold < lower_threshold) {
+                if (!sflag && System.currentTimeMillis() - time > time_interval) {
+                    onMotionChanged(true);
+                    Log.i(tag, "+threshold  : " + threshold + " = " + prevXYZ[0] + " " + prevXYZ[1] + " " + prevXYZ[2]);
+                    //Log.i(tag, "detectOriention+threshold  " + sflag + " : " + filteredXYZ[0] + " " + filteredXYZ[1] + " " + filteredXYZ[2]);
+
+                }
+            }
+            else if (sflag && System.currentTimeMillis() - time > time_interval) {
                 onMotionChanged(false);
             }
             //Log.i(tag, "detectOriention-  ");
@@ -279,7 +288,7 @@ public class AccUtils {
             filteredXYZ[2] = sqrXYZ[2];
 
             if ((filteredXYZ[0]+filteredXYZ[1]+filteredXYZ[2] == 0)
-                    //++++
+                //++++
                     /*|| (filteredXYZ[0] > filteredXYZ[2] && filteredXYZ[1] < 5) ||
                     (filteredXYZ[1] > filteredXYZ[0] && filteredXYZ[2] < 2) ||
                     (filteredXYZ[2] > filteredXYZ[0] && filteredXYZ[1] < 2) ||
@@ -294,7 +303,7 @@ public class AccUtils {
                     (xyz[1] < 0 && sumXYZ[0] == 0 && sumXYZ[1] == 0 && sumXYZ[2] > 8) ||
                     (xyz[1] < 0 && sumXYZ[0] == 1 && sumXYZ[1] == 1 && sumXYZ[2] > 20)*/
 
-                    //++++DUT is flat on table and user grab it up.
+                //++++DUT is flat on table and user grab it up.
                     ((xyz[2] > 4 && xyz[2] < 23) && (xyz[1] > -5 && xyz[1] < 2) && (xyz[0] > -9 && xyz[0] < 4) &&
                             (sumXYZ[2] > 3 ? ((sumXYZ[2] - sumXYZ[0]) > 4) : true) &&
                             (sumXYZ[2] > 3 ? ((sumXYZ[2] - sumXYZ[1]) > 4) : true) &&

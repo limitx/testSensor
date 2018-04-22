@@ -35,10 +35,10 @@ public class MainActivityx extends AppCompatActivity implements AccUtils.MotionL
 
     private final String tag = "MainActivity";
 
-
-
     TextView tv1;
+
     AccUtils test;
+    //AccUtils2 test;
 
     public static txtRW txtR;
 
@@ -52,7 +52,9 @@ public class MainActivityx extends AppCompatActivity implements AccUtils.MotionL
 
         tv1 = findViewById(R.id.textView);
 
+        ////
         test = new AccUtils(getApplicationContext(), this);
+        //test = new AccUtils2(getApplicationContext(), this);
 
         txtR = new txtRW();//++++
 

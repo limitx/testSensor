@@ -26,8 +26,9 @@ public class AccUtils {
     private ArrayList filterZ;
     int[] prevXYZ,diffXYZ,sqrXYZ,filteredXYZ;
     private static final int time_interval = 100; //100ms
-    private static final double upper_threshold = 18;// 9.8 + x
-    private static final double lower_threshold = 5;// 9.8 -x
+    private static final double upper_threshold = 20;// 9.8 + x
+    private static final double lower_threshold = 2;// 9.8 -x
+    private static final double other_threshold = 25;// 9.8 + x
 
     private SensorManager mSensorManager;
     private Sensor mSensor,mSensorLINEAR;
@@ -161,12 +162,12 @@ public class AccUtils {
         //YZ 0~20 340~360
         //XY 45~135 220~320
         //XZ 45~135 220~320
-        if (orientationXYZ[1] == orientationXYZ[2]) {
-            if (orientationXYZ[0] == 0 &&
-                    Math.abs(Z) > 8 && Math.abs(Y) < 3 && Math.abs(X) < 3 &&
+        if (orientationXYZ[0] == 0 && orientationXYZ[1] == orientationXYZ[2]) {
+            if (Math.abs(Z) > 8 && Math.abs(Y) < 3 && Math.abs(X) < 3 &&
                     (((orientationXYZ[1] < 315 && orientationXYZ[1] > 225) ||
                             (orientationXYZ[1] > 45 && orientationXYZ[1] < 135)) &&
-                            (filteredXYZ[2] > 2*filteredXYZ[0] &&
+                            ((filteredXYZ[0] + filteredXYZ[1] < 3) &&
+                                    filteredXYZ[2] > 2*filteredXYZ[0] &&
                                     filteredXYZ[2] > 2*filteredXYZ[1] && filteredXYZ[2] >= 9))
                     ) {
 
@@ -189,9 +190,9 @@ public class AccUtils {
                 }
             }
             if (filteredXYZ[0]+filteredXYZ[1]+filteredXYZ[2] != 0) {
-                Log.i(tag, "detectOriention+  "+sflag+" : "+ filteredXYZ[0] +" "+ filteredXYZ[1] +" "+ filteredXYZ[2]);
+                Log.i(tag, "detect+  "+sflag+" : "+ filteredXYZ[0] +" "+ filteredXYZ[1] +" "+ filteredXYZ[2]);
                 Log.i(tag, "detectOriention+  " + orientationXYZ[0] + " " + orientationXYZ[1] + " " + orientationXYZ[2]);
-                Log.i(tag, "detectOriention+  " + X + " " + Y + " " + Z);
+                Log.i(tag, "detect xyz+  " + X + " " + Y + " " + Z);
             }
         } else {
             if(threshold > upper_threshold || threshold < lower_threshold) {

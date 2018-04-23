@@ -262,7 +262,7 @@ public class ECGExample extends Activity implements AccUtils.MotionListener {
     }
 
     @Override
-    public void DrawX(int data) {
+    public void DrawX(int data1,int data2,int data3) {
 
     }
 

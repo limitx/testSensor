@@ -39,6 +39,7 @@ public class AccUtils {
     private MotionListener mListener;
     public interface MotionListener {
         void  onMotionChanged(int type);
+        void  DrawX(int data);
     }
     //-
 
@@ -193,6 +194,11 @@ public class AccUtils {
                 Log.i(tag, "detect+  "+sflag+" : "+ filteredXYZ[0] +" "+ filteredXYZ[1] +" "+ filteredXYZ[2]);
                 Log.i(tag, "detectOriention+  " + orientationXYZ[0] + " " + orientationXYZ[1] + " " + orientationXYZ[2]);
                 Log.i(tag, "detect xyz+  " + X + " " + Y + " " + Z);
+
+
+                if(mListener != null) {
+                    mListener.DrawX(filteredXYZ[2]*2);
+                }
             }
         } else {
             if(threshold > upper_threshold || threshold < lower_threshold) {

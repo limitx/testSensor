@@ -1,31 +1,27 @@
 package gg.work.limitx.myapplication;
 
-import android.content.Context;
-import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
-import android.graphics.PixelFormat;
-import android.graphics.Rect;
-import android.hardware.Sensor;
 import android.hardware.SensorEvent;
-import android.hardware.SensorEventListener;
-import android.hardware.SensorManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.support.v7.app.AppCompatActivity;
-import android.util.DisplayMetrics;
 import android.util.Log;
-import android.view.OrientationEventListener;
-import android.view.SurfaceHolder;
-import android.view.SurfaceView;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.androidplot.util.Redrawer;
+import com.androidplot.xy.AdvancedLineAndPointRenderer;
+import com.androidplot.xy.BoundaryMode;
+import com.androidplot.xy.XYPlot;
+import com.androidplot.xy.XYSeries;
+
+import java.lang.ref.WeakReference;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
+
 
 /**
  * Created by minche_li on 2018/04
@@ -42,12 +38,16 @@ public class MainActivityx extends AppCompatActivity implements AccUtils.MotionL
 
     public static txtRW txtR;
 
+    private XYPlot plot;
+    private Redrawer redrawer;
+    ECGModel ecgSeries;
+
     private static boolean start = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+        setContentView(R.layout.activity_mainx);
 
 
         tv1 = findViewById(R.id.textView);
@@ -58,6 +58,24 @@ public class MainActivityx extends AppCompatActivity implements AccUtils.MotionL
         //test = new AccUtils2(getApplicationContext(), this);
 
         txtR = new txtRW();//++++
+
+
+        // initialize our XYPlot reference:
+        plot = findViewById(R.id.plot);
+        // ECGModel
+        ecgSeries = new ECGModel(600);
+        // add a new series' to the xyplot:
+        MyFadeFormatter formatter =new MyFadeFormatter(600);
+        formatter.setLegendIconEnabled(false);
+        plot.addSeries(ecgSeries, formatter);
+        plot.setRangeBoundaries(0, 60, BoundaryMode.FIXED);
+        plot.setDomainBoundaries(0, 600, BoundaryMode.FIXED);
+        // reduce the number of range labels
+        plot.setLinesPerRangeLabel(3);
+        // start generating ecg data in the background:
+        ecgSeries.start(new WeakReference<>(plot.getRenderer(AdvancedLineAndPointRenderer.class)));
+        // set a redraw rate of 30hz and start immediately:
+        redrawer = new Redrawer(plot, 30, true);
 
         Button bt1 = findViewById(R.id.bt1);
         bt1.setOnClickListener(new View.OnClickListener() {
@@ -73,6 +91,9 @@ public class MainActivityx extends AppCompatActivity implements AccUtils.MotionL
                     txtR.txtRRclose();
                     start = false;
                 }*/
+
+                ecgSeries.addPt(50);
+                Log.v(tag, " ecgSeries ");
             }
         });
 
@@ -110,10 +131,20 @@ public class MainActivityx extends AppCompatActivity implements AccUtils.MotionL
         txtR.txtRRclose();//++++
     }
 
+    @Override
+    public void onStop() {
+        super.onStop();
+        redrawer.finish();
+    }
 
     @Override
     public void onMotionChanged(int type) {
         mHandler.sendEmptyMessage(type);
+    }
+
+    @Override
+    public void DrawX(int data) {
+        ecgSeries.addPt(data);
     }
 
     public static void tttt(SensorEvent event) {
@@ -143,6 +174,8 @@ public class MainActivityx extends AppCompatActivity implements AccUtils.MotionL
 
                     tv1.setText("+++++++");
                     tv1.setTextColor(Color.RED);
+
+
                     Log.i(tag, "toastMessage++");
                     break;
                 case 2:
@@ -157,4 +190,90 @@ public class MainActivityx extends AppCompatActivity implements AccUtils.MotionL
             }
         }
     };
+
+    public static class MyFadeFormatter extends AdvancedLineAndPointRenderer.Formatter {
+
+        private int trailSize;
+
+        public MyFadeFormatter(int trailSize) {
+            this.trailSize = trailSize;
+        }
+
+        @Override
+        public Paint getLinePaint(int thisIndex, int latestIndex, int seriesSize) {
+            // offset from the latest index:
+            int offset;
+            if(thisIndex > latestIndex) {
+                offset = latestIndex + (seriesSize - thisIndex);
+            } else {
+                offset =  latestIndex - thisIndex;
+            }
+
+            float scale = 255f / trailSize;
+            int alpha = (int) (255 - (offset * scale));
+            getLinePaint().setAlpha(alpha > 0 ? alpha : 0);
+            return getLinePaint();
+        }
+    }
+
+    public static class ECGModel implements XYSeries {
+        private final Number[] data;
+        private int latestIndex;
+
+        private WeakReference<AdvancedLineAndPointRenderer> rendererRef;
+
+        /**
+         *
+         * @param size Sample size contained within this model
+         */
+        public ECGModel(int size) {
+            data = new Number[size];
+            for(int i = 0; i < data.length; i++) {
+                data[i] = 0;
+            }
+        }
+
+        public void addPt(int x) {
+            if (latestIndex >= data.length) {
+                latestIndex = 0;
+            }
+
+            data[latestIndex] = x;
+
+            if(latestIndex < data.length - 1) {
+                // null out the point immediately following i, to disable
+                // connecting i and i+1 with a line:
+                data[latestIndex +1] = null;
+            }
+
+            if(rendererRef.get() != null) {
+                rendererRef.get().setLatestIndex(latestIndex);
+            }
+            latestIndex++;
+        }
+
+        public void start(final WeakReference<AdvancedLineAndPointRenderer> rendererRef) {
+            this.rendererRef = rendererRef;
+        }
+
+        @Override
+        public int size() {
+            return data.length;
+        }
+
+        @Override
+        public Number getX(int index) {
+            return index;
+        }
+
+        @Override
+        public Number getY(int index) {
+            return data[index];
+        }
+
+        @Override
+        public String getTitle() {
+            return "Signal";
+        }
+    }
 }

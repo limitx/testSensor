@@ -262,6 +262,11 @@ public class ECGExample extends Activity implements AccUtils.MotionListener {
     }
 
     @Override
+    public void DrawX(int data) {
+
+    }
+
+    @Override
     public void onStop() {
         super.onStop();
         redrawer.finish();

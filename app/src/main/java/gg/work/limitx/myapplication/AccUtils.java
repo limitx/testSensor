@@ -26,9 +26,9 @@ public class AccUtils {
     private ArrayList filterZ;
     int[] prevXYZ,diffXYZ,sqrXYZ,filteredXYZ;
     private static final int time_interval = 100; //100ms
-    private static final double upper_threshold = 20;// 9.8 + x
+    private static final double upper_threshold = 18.8;// 9.8 + x
     private static final double lower_threshold = 2;// 9.8 -x
-    private static final double other_threshold = 25;// 9.8 + x
+    private static final double other_threshold = 22;// 9.8 + x
 
     private SensorManager mSensorManager;
     private Sensor mSensor,mSensorLINEAR;
@@ -163,12 +163,12 @@ public class AccUtils {
         //XY 45~135 220~320
         //XZ 45~135 220~320
         if (orientationXYZ[0] == 0 && orientationXYZ[1] == orientationXYZ[2]) {
-            if (Math.abs(Z) > 8 && Math.abs(Y) < 3 && Math.abs(X) < 3 &&
+            if (Math.abs(Z) > 9 && Math.abs(Y) < 2 && Math.abs(X) < 2 &&
                     (((orientationXYZ[1] < 315 && orientationXYZ[1] > 225) ||
                             (orientationXYZ[1] > 45 && orientationXYZ[1] < 135)) &&
                             ((filteredXYZ[0] + filteredXYZ[1] < 3) &&
                                     filteredXYZ[2] > 2*filteredXYZ[0] &&
-                                    filteredXYZ[2] > 2*filteredXYZ[1] && filteredXYZ[2] >= 9))
+                                    filteredXYZ[2] > 2*filteredXYZ[1] && filteredXYZ[2] >= 16))
                     ) {
 
                 if (!sflag && System.currentTimeMillis() - time > time_interval) {

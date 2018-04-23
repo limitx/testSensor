@@ -51,6 +51,7 @@ public class MainActivityx extends AppCompatActivity implements AccUtils.MotionL
 
 
         tv1 = findViewById(R.id.textView);
+        tv1.setTextSize(20);
 
         ////
         test = new AccUtils(getApplicationContext(), this);

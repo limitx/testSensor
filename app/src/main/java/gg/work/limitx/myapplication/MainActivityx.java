@@ -40,7 +40,7 @@ public class MainActivityx extends AppCompatActivity implements AccUtils.MotionL
 
     private XYPlot plot;
     private Redrawer redrawer;
-    ECGModel ecgSeries;
+    ECGModel ecgSeries1,ecgSeries2,ecgSeries3;
 
     private static boolean start = false;
 
@@ -63,17 +63,30 @@ public class MainActivityx extends AppCompatActivity implements AccUtils.MotionL
         // initialize our XYPlot reference:
         plot = findViewById(R.id.plot);
         // ECGModel
-        ecgSeries = new ECGModel(600);
+        ecgSeries1 = new ECGModel(1500);
+        ecgSeries2 = new ECGModel(1500);
+        ecgSeries3 = new ECGModel(1500);
         // add a new series' to the xyplot:
-        MyFadeFormatter formatter =new MyFadeFormatter(600);
-        formatter.setLegendIconEnabled(false);
-        plot.addSeries(ecgSeries, formatter);
+        MyFadeFormatter formatter1 =new MyFadeFormatter(1500);
+        MyFadeFormatter formatter2 =new MyFadeFormatter(1500);
+        MyFadeFormatter formatter3 =new MyFadeFormatter(1500);
+        formatter1.setLegendIconEnabled(false);
+        formatter2.setLegendIconEnabled(false);
+        formatter3.setLegendIconEnabled(false);
+        formatter1.getLinePaint().setColor(Color.RED);
+        formatter2.getLinePaint().setColor(Color.YELLOW);
+        formatter3.getLinePaint().setColor(Color.BLUE);
+        plot.addSeries(ecgSeries1, formatter1);
+        plot.addSeries(ecgSeries2, formatter2);
+        plot.addSeries(ecgSeries3, formatter3);
         plot.setRangeBoundaries(0, 60, BoundaryMode.FIXED);
-        plot.setDomainBoundaries(0, 600, BoundaryMode.FIXED);
+        plot.setDomainBoundaries(0, 1500, BoundaryMode.FIXED);
         // reduce the number of range labels
         plot.setLinesPerRangeLabel(3);
         // start generating ecg data in the background:
-        ecgSeries.start(new WeakReference<>(plot.getRenderer(AdvancedLineAndPointRenderer.class)));
+        ecgSeries1.start(new WeakReference<>(plot.getRenderer(AdvancedLineAndPointRenderer.class)));
+        ecgSeries2.start(new WeakReference<>(plot.getRenderer(AdvancedLineAndPointRenderer.class)));
+        ecgSeries3.start(new WeakReference<>(plot.getRenderer(AdvancedLineAndPointRenderer.class)));
         // set a redraw rate of 30hz and start immediately:
         redrawer = new Redrawer(plot, 30, true);
 
@@ -92,7 +105,7 @@ public class MainActivityx extends AppCompatActivity implements AccUtils.MotionL
                     start = false;
                 }*/
 
-                ecgSeries.addPt(50);
+                ecgSeries1.addPt(50);
                 Log.v(tag, " ecgSeries ");
             }
         });
@@ -143,8 +156,10 @@ public class MainActivityx extends AppCompatActivity implements AccUtils.MotionL
     }
 
     @Override
-    public void DrawX(int data) {
-        ecgSeries.addPt(data);
+    public void DrawX(int data1,int data2,int data3) {
+        ecgSeries1.addPt(data1);
+        ecgSeries2.addPt(data2);
+        ecgSeries3.addPt(data3);
     }
 
     public static void tttt(SensorEvent event) {

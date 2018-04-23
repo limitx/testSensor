@@ -39,7 +39,7 @@ public class AccUtils {
     private MotionListener mListener;
     public interface MotionListener {
         void  onMotionChanged(int type);
-        void  DrawX(int data);
+        void  DrawX(int data1,int data2, int data3);
     }
     //-
 
@@ -121,6 +121,11 @@ public class AccUtils {
         float magnitudeYZ = Y * Y + Z * Z;
         double threshold = Math.sqrt((X * X + Y * Y + Z * Z));
 
+        if(mListener != null) {
+            mListener.DrawX((int)(X+30),(int)(Y+30),(int)(Z+30));
+
+        }
+
         if (magnitudeXY * 4 >= Z * Z) {
             float angle = (float) Math.atan2(-Y, X) * OneEightyOverPi;
             orientationXYZ[0] = 90 - (int) Math.round(angle);
@@ -194,11 +199,6 @@ public class AccUtils {
                 Log.i(tag, "detect+  "+sflag+" : "+ filteredXYZ[0] +" "+ filteredXYZ[1] +" "+ filteredXYZ[2]);
                 Log.i(tag, "detectOriention+  " + orientationXYZ[0] + " " + orientationXYZ[1] + " " + orientationXYZ[2]);
                 Log.i(tag, "detect xyz+  " + X + " " + Y + " " + Z);
-
-
-                if(mListener != null) {
-                    mListener.DrawX(filteredXYZ[2]*2);
-                }
             }
         } else {
             if(threshold > upper_threshold || threshold < lower_threshold) {

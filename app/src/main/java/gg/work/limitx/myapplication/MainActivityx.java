@@ -1,8 +1,11 @@
 package gg.work.limitx.myapplication;
 
+import android.content.Context;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.hardware.Sensor;
 import android.hardware.SensorEvent;
+import android.hardware.SensorManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -21,6 +24,7 @@ import com.androidplot.xy.XYSeries;
 
 import java.lang.ref.WeakReference;
 import java.text.SimpleDateFormat;
+import java.util.List;
 
 
 /**

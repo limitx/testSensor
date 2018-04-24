@@ -9,6 +9,7 @@ import android.os.Handler;
 import android.util.Log;
 
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by minche_li on 2018/04
@@ -20,7 +21,7 @@ public class AccUtils {
     // ACC algorithm
     private boolean detectStart;
     private static boolean sflag;
-    private long time = 0;
+    private long time = 0, timeStationary = 0;
     private ArrayList filterX;
     private ArrayList filterY;
     private ArrayList filterZ;
@@ -31,7 +32,10 @@ public class AccUtils {
     private static final double other_threshold = 22;// 9.8 + x
 
     private SensorManager mSensorManager;
-    private Sensor mSensor,mSensorLINEAR;
+    private Sensor mSensor,mSensorLINEAR, mSensorAnyMotion;
+    private static final int ANY_MOTION = 65601; // HTC Gesture sensor
+    private static final int stationary_time_interval = 5000; // 10 secs
+    private static boolean anyMotionToRegisterSneor = false; // 10 secs
 
     private Handler mHandler;
 
@@ -49,6 +53,14 @@ public class AccUtils {
         mSensorManager = (SensorManager)context.getSystemService(Context.SENSOR_SERVICE);
         mSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
         mSensorLINEAR = mSensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION);
+
+
+        List<Sensor> mAvailableSensor = mSensorManager.getSensorList(Sensor.TYPE_ALL);
+        for (int i = 0; i < mAvailableSensor.size(); ++i) {
+            if ((mAvailableSensor.get(i).getName()).equals("HTC Gesture sensor")) {
+                mSensorAnyMotion = mAvailableSensor.get(i);
+            }
+        }
     }
 
     public AccUtils(Context context, Handler handler) {
@@ -77,6 +89,10 @@ public class AccUtils {
                         SensorManager.SENSOR_DELAY_UI);
                 mSensorManager.registerListener(mSensorListener, mSensorLINEAR,
                         SensorManager.SENSOR_DELAY_UI);
+                /*if (mSensorAnyMotion != null) {
+                    mSensorManager.registerListener(mSensorListener, mSensorAnyMotion,
+                            SensorManager.SENSOR_DELAY_UI);
+                }*/
             } else {
                 mSensorManager.unregisterListener(mSensorListener);
             }
@@ -93,6 +109,18 @@ public class AccUtils {
             } else if (event.sensor.getType() == Sensor.TYPE_LINEAR_ACCELERATION) {
                 ////detectPulse(event);
                 detectM(event);
+            } else if (event.sensor.getType() == ANY_MOTION) {
+                // Unregister ANY motion sensor. Register ACC & ACC linear sensors.
+                if (anyMotionToRegisterSneor && mSensorAnyMotion != null) {
+                    anyMotionToRegisterSneor = false;
+                    mSensorManager.registerListener(mSensorListener, mSensor,
+                            SensorManager.SENSOR_DELAY_UI);
+                    mSensorManager.registerListener(mSensorListener, mSensorLINEAR,
+                            SensorManager.SENSOR_DELAY_UI);
+                    mSensorManager.unregisterListener(mSensorListener, mSensorAnyMotion);
+                    timeStationary =  System.currentTimeMillis();
+                    Log.i(tag, "ANY_MOTION+++");
+                }
             }
         }
 
@@ -123,7 +151,25 @@ public class AccUtils {
 
         if(mListener != null) {
             mListener.DrawX((int)(X+30),(int)(Y+30),(int)(Z+30));
+        }
 
+
+        if (filteredXYZ[0]+filteredXYZ[1]+filteredXYZ[2] == 0) {
+            if(Math.abs(timeStationary - System.currentTimeMillis()) > stationary_time_interval) {
+                // Unregister ACC & ACC linear sensors. Register ANY motion sensor.
+                if (mSensorAnyMotion != null) {
+                    mSensorManager.unregisterListener(mSensorListener, mSensor);
+                    mSensorManager.unregisterListener(mSensorListener, mSensorLINEAR);
+                    mSensorManager.registerListener(mSensorListener, mSensorAnyMotion,
+                            SensorManager.SENSOR_DELAY_UI);
+                    anyMotionToRegisterSneor = true;
+                    Log.i(tag, "ANY_MOTION---");
+                }
+                //Log.i(tag, "timeStationary  : "+timeStationary);
+            }
+            return;
+        } else {
+            timeStationary =  System.currentTimeMillis();
         }
 
         if (magnitudeXY * 4 >= Z * Z) {
@@ -151,7 +197,7 @@ public class AccUtils {
         }
 
         if (magnitudeXZ * 4 >= Y * Y) {
-            float angle = (float) Math.atan2(-Y, Z) * OneEightyOverPi;
+            float angle = (float) Math.atan2(-X, Z) * OneEightyOverPi;
             orientationXYZ[2] = 90 - (int) Math.round(angle);
             // normalize to 0 - 359 range
             while (orientationXYZ[2] >= 360) {
@@ -168,7 +214,7 @@ public class AccUtils {
         //YZ 0~20 340~360
         //XY 45~135 220~320
         //XZ 45~135 220~320
-        if (orientationXYZ[0] == 0 && orientationXYZ[1] == orientationXYZ[2]) {
+        if (orientationXYZ[0] == 0 && (Math.abs(orientationXYZ[1]-orientationXYZ[2]) < 45)) {
             if (Math.abs(Z) > 9 && Math.abs(Y) < 2 && Math.abs(X) < 2 &&
                     (((orientationXYZ[1] < 315 && orientationXYZ[1] > 225) ||
                             (orientationXYZ[1] > 45 && orientationXYZ[1] < 135)) &&
@@ -182,11 +228,13 @@ public class AccUtils {
                     //Log.i(tag, "detectOriention+ orientation  : "+orientationXYZ[0] +"  "+ orientationXYZ[1]);
                     //Log.i(tag, "detectOriention+  : "+threshold+" = "+ prevXYZ[0] +" "+ prevXYZ[1] +" "+ prevXYZ[2]);
                     //Log.i(tag, "detectOriention+  "+sflag+" : "+ filteredXYZ[0] +" "+ filteredXYZ[1] +" "+ filteredXYZ[2]);
+                } else {
+                    time = System.currentTimeMillis();
                 }
             } else if(threshold > upper_threshold || threshold < lower_threshold) {
                 if (!sflag && System.currentTimeMillis() - time > time_interval) {
                     onMotionChanged(true);
-                    Log.i(tag, "+threshold  : " + threshold + " = " + prevXYZ[0] + " " + prevXYZ[1] + " " + prevXYZ[2]);
+                    //Log.i(tag, "+threshold  : " + threshold + " = " + prevXYZ[0] + " " + prevXYZ[1] + " " + prevXYZ[2]);
                     //Log.i(tag, "detectOriention+threshold  " + sflag + " : " + filteredXYZ[0] + " " + filteredXYZ[1] + " " + filteredXYZ[2]);
 
                 }
@@ -195,17 +243,17 @@ public class AccUtils {
                     onMotionChanged(false);
                 }
             }
-            if (filteredXYZ[0]+filteredXYZ[1]+filteredXYZ[2] != 0) {
+            /*if (filteredXYZ[0]+filteredXYZ[1]+filteredXYZ[2] != 0) {
                 Log.i(tag, "detect+  "+sflag+" : "+ filteredXYZ[0] +" "+ filteredXYZ[1] +" "+ filteredXYZ[2]);
                 Log.i(tag, "detectOriention+  " + orientationXYZ[0] + " " + orientationXYZ[1] + " " + orientationXYZ[2]);
                 Log.i(tag, "detect xyz+  " + X + " " + Y + " " + Z);
-            }
+            }*/
         } else {
             if(threshold > upper_threshold || threshold < lower_threshold) {
                 if (!sflag && System.currentTimeMillis() - time > time_interval) {
                     onMotionChanged(true);
                     Log.i(tag, "+threshold  : " + threshold + " = " + prevXYZ[0] + " " + prevXYZ[1] + " " + prevXYZ[2]);
-                    //Log.i(tag, "detectOriention+threshold  " + sflag + " : " + filteredXYZ[0] + " " + filteredXYZ[1] + " " + filteredXYZ[2]);
+                    Log.i(tag, "detectOriention+threshold  " + sflag + " : " + filteredXYZ[0] + " " + filteredXYZ[1] + " " + filteredXYZ[2]);
 
                 }
             }
@@ -214,6 +262,12 @@ public class AccUtils {
             }
             //Log.i(tag, "detectOriention-  ");
         }
+
+        /*if (filteredXYZ[0]+filteredXYZ[1]+filteredXYZ[2] != 0) {
+            Log.i(tag, "detect+  "+sflag+" : "+ filteredXYZ[0] +" "+ filteredXYZ[1] +" "+ filteredXYZ[2]);
+            Log.i(tag, "detectOriention+  " + orientationXYZ[0] + " " + orientationXYZ[1] + " " + orientationXYZ[2]);
+            Log.i(tag, "detect xyz+  " + X + " " + Y + " " + Z);
+        }*/
     }
 
     private void detectM(SensorEvent event) {

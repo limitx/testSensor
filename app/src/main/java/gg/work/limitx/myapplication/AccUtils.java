@@ -21,7 +21,7 @@ public class AccUtils {
     // ACC algorithm
     private boolean detectStart;
     private static boolean sflag;
-    private long time = 0, timeStationary = 0;
+    private long time = 0, timeStationary;
     private ArrayList filterX;
     private ArrayList filterY;
     private ArrayList filterZ;
@@ -34,8 +34,8 @@ public class AccUtils {
     private SensorManager mSensorManager;
     private Sensor mSensor,mSensorLINEAR, mSensorAnyMotion;
     private static final int ANY_MOTION = 65601; // HTC Gesture sensor
-    private static final int stationary_time_interval = 5000; // 10 secs
-    private static boolean anyMotionToRegisterSneor = false; // 10 secs
+    private static final int stationary_time_interval = 10000; // 10 secs
+    private static boolean anyMotionToRegisterSneor = false;
 
     private Handler mHandler;
 
@@ -54,6 +54,7 @@ public class AccUtils {
         mSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
         mSensorLINEAR = mSensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION);
 
+        timeStationary =  System.currentTimeMillis();
 
         List<Sensor> mAvailableSensor = mSensorManager.getSensorList(Sensor.TYPE_ALL);
         for (int i = 0; i < mAvailableSensor.size(); ++i) {
@@ -113,12 +114,14 @@ public class AccUtils {
                 // Unregister ANY motion sensor. Register ACC & ACC linear sensors.
                 if (anyMotionToRegisterSneor && mSensorAnyMotion != null) {
                     anyMotionToRegisterSneor = false;
+                    detectStart = false;
+                    sflag = false;
+                    timeStationary =  System.currentTimeMillis();
                     mSensorManager.registerListener(mSensorListener, mSensor,
                             SensorManager.SENSOR_DELAY_UI);
                     mSensorManager.registerListener(mSensorListener, mSensorLINEAR,
                             SensorManager.SENSOR_DELAY_UI);
                     mSensorManager.unregisterListener(mSensorListener, mSensorAnyMotion);
-                    timeStationary =  System.currentTimeMillis();
                     Log.i(tag, "ANY_MOTION+++");
                 }
             }
@@ -154,7 +157,7 @@ public class AccUtils {
         }
 
 
-        if (filteredXYZ[0]+filteredXYZ[1]+filteredXYZ[2] == 0) {
+        if (!anyMotionToRegisterSneor && filteredXYZ[0]+filteredXYZ[1]+filteredXYZ[2] == 0) {
             if(Math.abs(timeStationary - System.currentTimeMillis()) > stationary_time_interval) {
                 // Unregister ACC & ACC linear sensors. Register ANY motion sensor.
                 if (mSensorAnyMotion != null) {

@@ -131,7 +131,6 @@ public class AccUtils {
             mListener.DrawX((int)(X+30),(int)(Y+30),(int)(Z+30));
         }
 
-
         if (!anyMotionToRegisterSensor && filteredXYZ[0]+filteredXYZ[1]+filteredXYZ[2] == 0) {
             if(Math.abs(timeStationary - System.currentTimeMillis()) > stationary_time_interval) {
                 // Unregister ACC & ACC linear sensors. Register ANY motion sensor.

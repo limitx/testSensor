@@ -40,7 +40,7 @@ public class AccUtils {
     private Handler mHandler;
 
     //+
-    private MotionListener mListener;
+    private static MotionListener mListener;
     public interface MotionListener {
         void  onMotionChanged(int type);
         void  DrawX(int data1,int data2, int data3);
@@ -54,12 +54,11 @@ public class AccUtils {
         mSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
         mSensorLINEAR = mSensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION);
 
-        timeStationary =  System.currentTimeMillis();
-
         List<Sensor> mAvailableSensor = mSensorManager.getSensorList(Sensor.TYPE_ALL);
         for (int i = 0; i < mAvailableSensor.size(); ++i) {
             if ((mAvailableSensor.get(i).getName()).equals("HTC Gesture sensor")) {
                 mSensorAnyMotion = mAvailableSensor.get(i);
+                break;
             }
         }
     }
@@ -75,7 +74,9 @@ public class AccUtils {
     public void enableAccSensor(boolean enable) {
         detectStart = false;
         sflag = false;
+        anyMotionToRegisterSneor = false;
         time = 0;
+        timeStationary =  System.currentTimeMillis();
         prevXYZ = new int[3];
         diffXYZ = new int[3];
         sqrXYZ = new int[3];
@@ -113,15 +114,8 @@ public class AccUtils {
             } else if (event.sensor.getType() == ANY_MOTION) {
                 // Unregister ANY motion sensor. Register ACC & ACC linear sensors.
                 if (anyMotionToRegisterSneor && mSensorAnyMotion != null) {
-                    anyMotionToRegisterSneor = false;
-                    detectStart = false;
-                    sflag = false;
-                    timeStationary =  System.currentTimeMillis();
-                    mSensorManager.registerListener(mSensorListener, mSensor,
-                            SensorManager.SENSOR_DELAY_UI);
-                    mSensorManager.registerListener(mSensorListener, mSensorLINEAR,
-                            SensorManager.SENSOR_DELAY_UI);
                     mSensorManager.unregisterListener(mSensorListener, mSensorAnyMotion);
+                    enableAccSensor(true);
                     Log.i(tag, "ANY_MOTION+++");
                 }
             }
@@ -161,8 +155,7 @@ public class AccUtils {
             if(Math.abs(timeStationary - System.currentTimeMillis()) > stationary_time_interval) {
                 // Unregister ACC & ACC linear sensors. Register ANY motion sensor.
                 if (mSensorAnyMotion != null) {
-                    mSensorManager.unregisterListener(mSensorListener, mSensor);
-                    mSensorManager.unregisterListener(mSensorListener, mSensorLINEAR);
+                    enableAccSensor(false);
                     mSensorManager.registerListener(mSensorListener, mSensorAnyMotion,
                             SensorManager.SENSOR_DELAY_UI);
                     anyMotionToRegisterSneor = true;
@@ -231,8 +224,6 @@ public class AccUtils {
                     //Log.i(tag, "detectOriention+ orientation  : "+orientationXYZ[0] +"  "+ orientationXYZ[1]);
                     //Log.i(tag, "detectOriention+  : "+threshold+" = "+ prevXYZ[0] +" "+ prevXYZ[1] +" "+ prevXYZ[2]);
                     //Log.i(tag, "detectOriention+  "+sflag+" : "+ filteredXYZ[0] +" "+ filteredXYZ[1] +" "+ filteredXYZ[2]);
-                } else {
-                    time = System.currentTimeMillis();
                 }
             } else if(threshold > upper_threshold || threshold < lower_threshold) {
                 if (!sflag && System.currentTimeMillis() - time > time_interval) {
@@ -246,11 +237,11 @@ public class AccUtils {
                     onMotionChanged(false);
                 }
             }
-            /*if (filteredXYZ[0]+filteredXYZ[1]+filteredXYZ[2] != 0) {
+            if (filteredXYZ[0]+filteredXYZ[1]+filteredXYZ[2] != 0) {
                 Log.i(tag, "detect+  "+sflag+" : "+ filteredXYZ[0] +" "+ filteredXYZ[1] +" "+ filteredXYZ[2]);
                 Log.i(tag, "detectOriention+  " + orientationXYZ[0] + " " + orientationXYZ[1] + " " + orientationXYZ[2]);
                 Log.i(tag, "detect xyz+  " + X + " " + Y + " " + Z);
-            }*/
+            }
         } else {
             if(threshold > upper_threshold || threshold < lower_threshold) {
                 if (!sflag && System.currentTimeMillis() - time > time_interval) {

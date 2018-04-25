@@ -8,7 +8,6 @@ import android.hardware.SensorManager;
 import android.os.Handler;
 import android.util.Log;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -22,9 +21,6 @@ public class AccUtils {
     private boolean detectStart;
     private static boolean sflag;
     private long time = 0, timeStationary;
-    private ArrayList filterX;
-    private ArrayList filterY;
-    private ArrayList filterZ;
     int[] prevXYZ,diffXYZ,sqrXYZ,filteredXYZ;
     private static final int time_interval = 100; //100ms
     private static final double upper_threshold = 18.8;// 9.8 + x
@@ -35,7 +31,7 @@ public class AccUtils {
     private Sensor mSensor,mSensorLINEAR, mSensorAnyMotion;
     private static final int ANY_MOTION = 65601; // HTC Gesture sensor
     private static final int stationary_time_interval = 10000; // 10 secs
-    private static boolean anyMotionToRegisterSneor = false;
+    private static boolean anyMotionToRegisterSensor = false;
 
     private Handler mHandler;
 
@@ -63,27 +59,16 @@ public class AccUtils {
         }
     }
 
-    public AccUtils(Context context, Handler handler) {
-        mHandler = handler;
-
-        mSensorManager = (SensorManager)context.getSystemService(Context.SENSOR_SERVICE);
-        mSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
-        mSensorLINEAR = mSensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION);
-    }
-
     public void enableAccSensor(boolean enable) {
         detectStart = false;
         sflag = false;
-        anyMotionToRegisterSneor = false;
+        anyMotionToRegisterSensor = false;
         time = 0;
         timeStationary =  System.currentTimeMillis();
         prevXYZ = new int[3];
         diffXYZ = new int[3];
         sqrXYZ = new int[3];
         filteredXYZ = new int[3];
-        filterX = new ArrayList();
-        filterY = new ArrayList();
-        filterZ = new ArrayList();
 
         synchronized (this) {
             if (enable) {
@@ -105,15 +90,11 @@ public class AccUtils {
         public void onSensorChanged(SensorEvent event) {
             if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
                 detectOrientation(event);
-                /*if(mListener != null) {
-                    mListener.onMotionChanged((int)(event.values[0]*4));
-                }*/
             } else if (event.sensor.getType() == Sensor.TYPE_LINEAR_ACCELERATION) {
-                ////detectPulse(event);
-                detectM(event);
+                calculateAccVector(event);
             } else if (event.sensor.getType() == ANY_MOTION) {
                 // Unregister ANY motion sensor. Register ACC & ACC linear sensors.
-                if (anyMotionToRegisterSneor && mSensorAnyMotion != null) {
+                if (anyMotionToRegisterSensor && mSensorAnyMotion != null) {
                     mSensorManager.unregisterListener(mSensorListener, mSensorAnyMotion);
                     enableAccSensor(true);
                     Log.i(tag, "ANY_MOTION+++");
@@ -151,15 +132,19 @@ public class AccUtils {
         }
 
 
-        if (!anyMotionToRegisterSneor && filteredXYZ[0]+filteredXYZ[1]+filteredXYZ[2] == 0) {
+        if (!anyMotionToRegisterSensor && filteredXYZ[0]+filteredXYZ[1]+filteredXYZ[2] == 0) {
             if(Math.abs(timeStationary - System.currentTimeMillis()) > stationary_time_interval) {
                 // Unregister ACC & ACC linear sensors. Register ANY motion sensor.
                 if (mSensorAnyMotion != null) {
                     enableAccSensor(false);
+                    anyMotionToRegisterSensor = true;
                     mSensorManager.registerListener(mSensorListener, mSensorAnyMotion,
                             SensorManager.SENSOR_DELAY_UI);
-                    anyMotionToRegisterSneor = true;
-                    Log.i(tag, "ANY_MOTION---");
+                    //Log.i(tag, "ANY_MOTION---");
+                }
+                if (sflag && System.currentTimeMillis() - time > time_interval) {
+                    onMotionChanged(false);
+                    //Log.i(tag, "detectOriention-0  ");
                 }
                 //Log.i(tag, "timeStationary  : "+timeStationary);
             }
@@ -223,38 +208,38 @@ public class AccUtils {
                     onMotionChanged(true);
                     //Log.i(tag, "detectOriention+ orientation  : "+orientationXYZ[0] +"  "+ orientationXYZ[1]);
                     //Log.i(tag, "detectOriention+  : "+threshold+" = "+ prevXYZ[0] +" "+ prevXYZ[1] +" "+ prevXYZ[2]);
-                    //Log.i(tag, "detectOriention+  "+sflag+" : "+ filteredXYZ[0] +" "+ filteredXYZ[1] +" "+ filteredXYZ[2]);
+                    //Log.i(tag, "detectOriention++  "+sflag+" : "+ filteredXYZ[0] +" "+ filteredXYZ[1] +" "+ filteredXYZ[2]);
                 }
             } else if(threshold > upper_threshold || threshold < lower_threshold) {
                 if (!sflag && System.currentTimeMillis() - time > time_interval) {
                     onMotionChanged(true);
                     //Log.i(tag, "+threshold  : " + threshold + " = " + prevXYZ[0] + " " + prevXYZ[1] + " " + prevXYZ[2]);
-                    //Log.i(tag, "detectOriention+threshold  " + sflag + " : " + filteredXYZ[0] + " " + filteredXYZ[1] + " " + filteredXYZ[2]);
+                    //Log.i(tag, "detectOriention+threshold+  " + sflag + " : " + filteredXYZ[0] + " " + filteredXYZ[1] + " " + filteredXYZ[2]);
 
                 }
             } else {
                 if (sflag && System.currentTimeMillis() - time > time_interval) {
                     onMotionChanged(false);
+                    //Log.i(tag, "detectOriention-  ");
                 }
             }
-            if (filteredXYZ[0]+filteredXYZ[1]+filteredXYZ[2] != 0) {
+            /*if (filteredXYZ[0]+filteredXYZ[1]+filteredXYZ[2] != 0) {
                 Log.i(tag, "detect+  "+sflag+" : "+ filteredXYZ[0] +" "+ filteredXYZ[1] +" "+ filteredXYZ[2]);
                 Log.i(tag, "detectOriention+  " + orientationXYZ[0] + " " + orientationXYZ[1] + " " + orientationXYZ[2]);
                 Log.i(tag, "detect xyz+  " + X + " " + Y + " " + Z);
-            }
+            }*/
         } else {
             if(threshold > upper_threshold || threshold < lower_threshold) {
                 if (!sflag && System.currentTimeMillis() - time > time_interval) {
                     onMotionChanged(true);
-                    Log.i(tag, "+threshold  : " + threshold + " = " + prevXYZ[0] + " " + prevXYZ[1] + " " + prevXYZ[2]);
-                    Log.i(tag, "detectOriention+threshold  " + sflag + " : " + filteredXYZ[0] + " " + filteredXYZ[1] + " " + filteredXYZ[2]);
+                    //Log.i(tag, "+threshold  : " + threshold + " = " + prevXYZ[0] + " " + prevXYZ[1] + " " + prevXYZ[2]);
+                    //Log.i(tag, "detectOriention+threshold++  " + sflag + " : " + filteredXYZ[0] + " " + filteredXYZ[1] + " " + filteredXYZ[2]);
 
                 }
-            }
-            else if (sflag && System.currentTimeMillis() - time > time_interval) {
+            } else if (sflag && System.currentTimeMillis() - time > time_interval) {
                 onMotionChanged(false);
+                //Log.i(tag, "detectOriention--  ");
             }
-            //Log.i(tag, "detectOriention-  ");
         }
 
         /*if (filteredXYZ[0]+filteredXYZ[1]+filteredXYZ[2] != 0) {
@@ -264,7 +249,7 @@ public class AccUtils {
         }*/
     }
 
-    private void detectM(SensorEvent event) {
+    private void calculateAccVector(SensorEvent event) {
         int[] xyz = new int[3];
         xyz[0] = (int) (event.values[0] * 4);
         xyz[1] = (int) (event.values[1] * 4);
@@ -289,103 +274,6 @@ public class AccUtils {
             filteredXYZ[1] = sqrXYZ[1];
             filteredXYZ[2] = sqrXYZ[2];
             ////Log.i(tag, "detectM+  " + filteredXYZ[0] +" "+ filteredXYZ[1] +" "+ filteredXYZ[2]);
-        }
-    }
-
-    private void detectPulse(SensorEvent event) {
-        int[] xyz = new int[3];
-        xyz[0] = (int)(event.values[0]*4);
-        xyz[1] = (int)(event.values[1]*4);
-        xyz[2] = (int)(event.values[2]*4);
-
-        if (!detectStart) {
-            detectStart = true;
-            time = System.currentTimeMillis();
-            prevXYZ[0] = (int)(event.values[0]);
-            prevXYZ[1] = (int)(event.values[1]);
-            prevXYZ[2] = (int)(event.values[2]);
-        } else {
-            diffXYZ[0] = xyz[0] - prevXYZ[0];
-            diffXYZ[1] = xyz[1] - prevXYZ[1];
-            diffXYZ[2] = xyz[2] - prevXYZ[2];
-
-            sqrXYZ[0] = diffXYZ[0] * diffXYZ[0];
-            sqrXYZ[1] = diffXYZ[1] * diffXYZ[1];
-            sqrXYZ[2] = diffXYZ[2] * diffXYZ[2];
-
-            /*filteredXYZ[0] = k1.kalmanFilter(sqrXYZ[0]);
-            filteredXYZ[1] = k2.kalmanFilter(sqrXYZ[1]);
-            filteredXYZ[2] = k3.kalmanFilter(sqrXYZ[2]);*/
-
-            if (filterX.size() < 3) {
-                filterX.add(xyz[0]);
-                filterY.add(xyz[1]);
-                filterZ.add(xyz[2]);
-            } else {
-                //Log.i(tag, "detectPulse+ "+filter.size() +" "+sqrXYZ[0]+" / "+filter.toString());
-                filterX.remove(0);
-                filterX.add(xyz[0]);
-                filterY.remove(0);
-                filterY.add(xyz[1]);
-                filterZ.remove(0);
-                filterZ.add(xyz[2]);
-            }
-
-            int[] sumXYZ = new int[3];
-            for (int i = 1; i < filterX.size(); i++) {
-                sumXYZ[0] += Math.abs((int)filterX.get(i));
-                sumXYZ[1] += Math.abs((int)filterY.get(i));
-                sumXYZ[2] += Math.abs((int)filterZ.get(i));
-            }
-
-            filteredXYZ[0] = sqrXYZ[0];
-            filteredXYZ[1] = sqrXYZ[1];
-            filteredXYZ[2] = sqrXYZ[2];
-
-            if ((filteredXYZ[0]+filteredXYZ[1]+filteredXYZ[2] == 0)
-                //++++
-                    /*|| (filteredXYZ[0] > filteredXYZ[2] && filteredXYZ[1] < 5) ||
-                    (filteredXYZ[1] > filteredXYZ[0] && filteredXYZ[2] < 2) ||
-                    (filteredXYZ[2] > filteredXYZ[0] && filteredXYZ[1] < 2) ||
-                    (filteredXYZ[0] > 15 && filteredXYZ[0] < 100 && filteredXYZ[1] < 2 && filteredXYZ[2] < 2) ||
-                    (filteredXYZ[1] < 2 && filteredXYZ[0] > 2 && filteredXYZ[2] > 2)*/
-                    ) {
-                if (sflag && System.currentTimeMillis() - time > 200) {
-                    onMotionChanged(false);
-                }
-            } else if (
-                    /*(filteredXYZ[1] == 0 && sumXYZ[0] < 6 && sumXYZ[2] > 10 && sumXYZ[0] > sumXYZ[1]) ||
-                    (xyz[1] < 0 && sumXYZ[0] == 0 && sumXYZ[1] == 0 && sumXYZ[2] > 8) ||
-                    (xyz[1] < 0 && sumXYZ[0] == 1 && sumXYZ[1] == 1 && sumXYZ[2] > 20)*/
-
-                //++++DUT is flat on table and user grab it up.
-                    ((xyz[2] > 4 && xyz[2] < 23) && (xyz[1] > -5 && xyz[1] < 2) && (xyz[0] > -9 && xyz[0] < 4) &&
-                            (sumXYZ[2] > 3 ? ((sumXYZ[2] - sumXYZ[0]) > 4) : true) &&
-                            (sumXYZ[2] > 3 ? ((sumXYZ[2] - sumXYZ[1]) > 4) : true) &&
-                            (sumXYZ[2] > 4) && (sumXYZ[1] < 7 && sumXYZ[1] > -1) && (sumXYZ[0] > -1 && sumXYZ[0] < 7))
-                    ) {
-
-                if (!sflag && System.currentTimeMillis() - time > 400) {
-                    onMotionChanged(true);
-                    Log.i(tag, "dPulse+ " + xyz[0]+" "+xyz[1]+" "+xyz[2] +" ,"+filteredXYZ[0]+","+filteredXYZ[1]+","+filteredXYZ[2]);
-                }
-            } else if (sflag && System.currentTimeMillis() - time > 200) {//if (filteredXYZ[0] < 10 && filteredXYZ[2] < 10) {
-                onMotionChanged(false);
-            }
-
-            prevXYZ[0] = xyz[0];
-            prevXYZ[1] = xyz[1];
-            prevXYZ[2] = xyz[2];
-
-            if ((filteredXYZ[0]+filteredXYZ[1]+filteredXYZ[2] != 0)) {
-                Log.i(tag, "dPulse0 "+sflag +" "+ xyz[0] + " " + xyz[1] + " " + xyz[2] +
-                        " / " + filteredXYZ[0] + "," + filteredXYZ[1] + "," + filteredXYZ[2] +
-                        " / " + sumXYZ[0] + "," + sumXYZ[1] + "," + sumXYZ[2]);
-            }
-            /*if ((filteredXYZ[0]+filteredXYZ[1]+filteredXYZ[2] != 0)) {
-                Log.i(tag, "dPulse0 "+sflag + xyz[0] + " " + xyz[1] + " " + xyz[2] +
-                        " / " + filteredXYZ[0] + "," + filteredXYZ[1] + "," + filteredXYZ[2]);
-            }*/
         }
     }
 }

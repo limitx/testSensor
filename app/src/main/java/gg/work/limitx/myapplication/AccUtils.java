@@ -43,6 +43,25 @@ public class AccUtils {
     }
     //-
 
+    /*
+            filterX = new ArrayList();
+            filterY = new ArrayList();
+            filterZ = new ArrayList();
+
+            if (filterX.size() < 3) {
+                filterX.add(xyz[0]);
+                filterY.add(xyz[1]);
+                filterZ.add(xyz[2]);
+            } else {
+                //Log.i(tag, "detectPulse+ "+filter.size() +" "+sqrXYZ[0]+" / "+filter.toString());
+                filterX.remove(0);
+                filterX.add(xyz[0]);
+                filterY.remove(0);
+                filterY.add(xyz[1]);
+                filterZ.remove(0);
+                filterZ.add(xyz[2]);
+            }
+    */
     public AccUtils(Context context, MotionListener listener){
         mListener = listener;
 
@@ -60,6 +79,10 @@ public class AccUtils {
     }
 
     public void enableAccSensor(boolean enable) {
+        if (sflag) {
+            onMotionChanged(false);
+        }
+
         detectStart = false;
         sflag = false;
         anyMotionToRegisterSensor = false;
@@ -131,6 +154,9 @@ public class AccUtils {
             mListener.DrawX((int)(X+30),(int)(Y+30),(int)(Z+30));
         }
 
+        if (sflag && System.currentTimeMillis() - time > time_interval) {
+            onMotionChanged(false);
+        }
         if (!anyMotionToRegisterSensor && filteredXYZ[0]+filteredXYZ[1]+filteredXYZ[2] == 0) {
             if(Math.abs(timeStationary - System.currentTimeMillis()) > stationary_time_interval) {
                 // Unregister ACC & ACC linear sensors. Register ANY motion sensor.
@@ -140,10 +166,6 @@ public class AccUtils {
                     mSensorManager.registerListener(mSensorListener, mSensorAnyMotion,
                             SensorManager.SENSOR_DELAY_UI);
                     //Log.i(tag, "ANY_MOTION---");
-                }
-                if (sflag && System.currentTimeMillis() - time > time_interval) {
-                    onMotionChanged(false);
-                    //Log.i(tag, "detectOriention-0  ");
                 }
                 //Log.i(tag, "timeStationary  : "+timeStationary);
             }
@@ -195,12 +217,14 @@ public class AccUtils {
         //XY 45~135 220~320
         //XZ 45~135 220~320
         if (orientationXYZ[0] == 0 && (Math.abs(orientationXYZ[1]-orientationXYZ[2]) < 45)) {
-            if (Math.abs(Z) > 9 && Math.abs(Y) < 2 && Math.abs(X) < 2 &&
+            if (((Math.abs(Z) > 8 && ((Math.abs(X) < 2.2 && Math.abs(Y) < 2.2) || (Math.abs(X) < 0.8 && Math.abs(Y) < 3))) ||
+                    ((Math.abs(Z) < 8 && Math.abs(Z) > 6) && Math.abs(X) < 1 && (Math.abs(Y) < 7 && Math.abs(Y) > 4))) &&
                     (((orientationXYZ[1] < 315 && orientationXYZ[1] > 225) ||
                             (orientationXYZ[1] > 45 && orientationXYZ[1] < 135)) &&
-                            ((filteredXYZ[0] + filteredXYZ[1] < 3) &&
+                            (((filteredXYZ[0] + filteredXYZ[1] < 3) &&
                                     filteredXYZ[2] > 2*filteredXYZ[0] &&
-                                    filteredXYZ[2] > 2*filteredXYZ[1] && filteredXYZ[2] >= 16))
+                                    filteredXYZ[2] > 2*filteredXYZ[1] && filteredXYZ[2] >= 16) ||
+                                    (filteredXYZ[0] == 0 && filteredXYZ[1] == 0 && filteredXYZ[2] >=4)))
                     ) {
 
                 if (!sflag && System.currentTimeMillis() - time > time_interval) {

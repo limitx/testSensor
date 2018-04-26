@@ -22,7 +22,7 @@ public class AccUtils {
     private static boolean sflag;
     private long time = 0, timeStationary;
     int[] prevXYZ,diffXYZ,sqrXYZ,filteredXYZ;
-    private static final int time_interval = 100; //100ms
+    private static final int time_interval = 150; //100ms
     private static final double upper_threshold = 18.8;// 9.8 + x
     private static final double lower_threshold = 2;// 9.8 -x
     private static final double other_threshold = 22;// 9.8 + x
@@ -216,11 +216,13 @@ public class AccUtils {
         //YZ 0~20 340~360
         //XY 45~135 220~320
         //XZ 45~135 220~320
-        if (orientationXYZ[0] == 0 && (Math.abs(orientationXYZ[1]-orientationXYZ[2]) < 45)) {
-            if (((Math.abs(Z) > 8 && ((Math.abs(X) < 2.2 && Math.abs(Y) < 2.2) || (Math.abs(X) < 0.8 && Math.abs(Y) < 3))) ||
-                    ((Math.abs(Z) < 8 && Math.abs(Z) > 6) && Math.abs(X) < 1 && (Math.abs(Y) < 7 && Math.abs(Y) > 4))) &&
-                    (((orientationXYZ[1] < 315 && orientationXYZ[1] > 225) ||
-                            (orientationXYZ[1] > 45 && orientationXYZ[1] < 135)) &&
+
+        // old Z>9 X<2 Y<2
+        if ((orientationXYZ[0] == 0 || (orientationXYZ[0] > 270) || orientationXYZ[0] < 90) &&
+                (Math.abs(orientationXYZ[1]-orientationXYZ[2]) < 65)) {
+            if ( ((Math.abs(Z) > Math.abs(3.2+X+Y)) && Math.abs(X+Y) < 5) &&
+                    (((orientationXYZ[1] < 330 && orientationXYZ[1] > 210) ||
+                            (orientationXYZ[1] > 30 && orientationXYZ[1] < 150)) &&
                             (((filteredXYZ[0] + filteredXYZ[1] < 3) &&
                                     filteredXYZ[2] > 2*filteredXYZ[0] &&
                                     filteredXYZ[2] > 2*filteredXYZ[1] && filteredXYZ[2] >= 16) ||
@@ -265,11 +267,11 @@ public class AccUtils {
             }
         }
 
-        /*if (filteredXYZ[0]+filteredXYZ[1]+filteredXYZ[2] != 0) {
+        if (filteredXYZ[0]+filteredXYZ[1]+filteredXYZ[2] != 0) {
             Log.i(tag, "detect+  "+sflag+" : "+ filteredXYZ[0] +" "+ filteredXYZ[1] +" "+ filteredXYZ[2]);
             Log.i(tag, "detectOriention+  " + orientationXYZ[0] + " " + orientationXYZ[1] + " " + orientationXYZ[2]);
             Log.i(tag, "detect xyz+  " + X + " " + Y + " " + Z);
-        }*/
+        }
     }
 
     private void calculateAccVector(SensorEvent event) {

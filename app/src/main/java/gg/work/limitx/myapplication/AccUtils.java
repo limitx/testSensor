@@ -8,6 +8,7 @@ import android.hardware.SensorManager;
 import android.os.Handler;
 import android.util.Log;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -26,6 +27,10 @@ public class AccUtils {
     private static final double upper_threshold = 18.8;// 9.8 + x
     private static final double lower_threshold = 2;// 9.8 -x
     private static final double other_threshold = 22;// 9.8 + x
+
+    private ArrayList filterX;
+    private ArrayList filterY;
+    private ArrayList filterZ;
 
     private SensorManager mSensorManager;
     private Sensor mSensor,mSensorLINEAR, mSensorAnyMotion;
@@ -92,6 +97,11 @@ public class AccUtils {
         diffXYZ = new int[3];
         sqrXYZ = new int[3];
         filteredXYZ = new int[3];
+
+        filterX = new ArrayList();
+        filterY = new ArrayList();
+        filterZ = new ArrayList();
+
 
         synchronized (this) {
             if (enable) {
@@ -218,15 +228,13 @@ public class AccUtils {
         //XZ 45~135 220~320
 
         // old Z>9 X<2 Y<2
-        if ((orientationXYZ[0] == 0 || (orientationXYZ[0] > 270) || orientationXYZ[0] < 90) &&
-                (Math.abs(orientationXYZ[1]-orientationXYZ[2]) < 65)) {
-            if ( ((Math.abs(Z) > Math.abs(3.2+X+Y)) && Math.abs(X+Y) < 5) &&
-                    (((orientationXYZ[1] < 330 && orientationXYZ[1] > 210) ||
-                            (orientationXYZ[1] > 30 && orientationXYZ[1] < 150)) &&
+        if (orientationXYZ[0] == 0 && (Math.abs(orientationXYZ[1]-orientationXYZ[2]) < 45)) {
+            if ((Math.abs(Z) > 8) &&
+                   (((orientationXYZ[1] < 315 && orientationXYZ[1] > 225) ||
+                            (orientationXYZ[1] > 45 && orientationXYZ[1] < 135)) &&
                             (((filteredXYZ[0] + filteredXYZ[1] < 3) &&
                                     filteredXYZ[2] > 2*filteredXYZ[0] &&
-                                    filteredXYZ[2] > 2*filteredXYZ[1] && filteredXYZ[2] >= 16) ||
-                                    (filteredXYZ[0] == 0 && filteredXYZ[1] == 0 && filteredXYZ[2] >=4)))
+                                    filteredXYZ[2] > 2*filteredXYZ[1] && filteredXYZ[2] >= 20)))
                     ) {
 
                 if (!sflag && System.currentTimeMillis() - time > time_interval) {
@@ -240,7 +248,6 @@ public class AccUtils {
                     onMotionChanged(true);
                     //Log.i(tag, "+threshold  : " + threshold + " = " + prevXYZ[0] + " " + prevXYZ[1] + " " + prevXYZ[2]);
                     //Log.i(tag, "detectOriention+threshold+  " + sflag + " : " + filteredXYZ[0] + " " + filteredXYZ[1] + " " + filteredXYZ[2]);
-
                 }
             } else {
                 if (sflag && System.currentTimeMillis() - time > time_interval) {
@@ -268,9 +275,9 @@ public class AccUtils {
         }
 
         if (filteredXYZ[0]+filteredXYZ[1]+filteredXYZ[2] != 0) {
-            Log.i(tag, "detect+  "+sflag+" : "+ filteredXYZ[0] +" "+ filteredXYZ[1] +" "+ filteredXYZ[2]);
-            Log.i(tag, "detectOriention+  " + orientationXYZ[0] + " " + orientationXYZ[1] + " " + orientationXYZ[2]);
-            Log.i(tag, "detect xyz+  " + X + " " + Y + " " + Z);
+            Log.i(tag, "detect+  "+sflag+" : "+ filteredXYZ[0] +" "+ filteredXYZ[1] +" "+ filteredXYZ[2] +" threshold: "+ threshold);
+            //Log.i(tag, "detectOriention+  " + orientationXYZ[0] + " " + orientationXYZ[1] + " " + orientationXYZ[2]);
+            //Log.i(tag, "detect xyz+  " + X + " " + Y + " " + Z);
         }
     }
 
@@ -295,9 +302,30 @@ public class AccUtils {
             sqrXYZ[1] = diffXYZ[1] * diffXYZ[1];
             sqrXYZ[2] = diffXYZ[2] * diffXYZ[2];
 
-            filteredXYZ[0] = sqrXYZ[0];
-            filteredXYZ[1] = sqrXYZ[1];
-            filteredXYZ[2] = sqrXYZ[2];
+            if (filterX.size() < 4) {
+                filterX.add(sqrXYZ[0]);
+                filterY.add(sqrXYZ[1]);
+                filterZ.add(sqrXYZ[2]);
+            } else {
+                //Log.i(tag, "detectPulse+ "+filter.size() +" "+sqrXYZ[0]+" / "+filter.toString());
+                filterX.remove(0);
+                filterX.add(sqrXYZ[0]);
+                filterY.remove(0);
+                filterY.add(sqrXYZ[1]);
+                filterZ.remove(0);
+                filterZ.add(sqrXYZ[2]);
+            }
+
+            int[] sumXYZ = new int[3];
+            for (int i = 1; i < filterX.size(); i++) {
+                sumXYZ[0] += Math.abs((int)filterX.get(i));
+                sumXYZ[1] += Math.abs((int)filterY.get(i));
+                sumXYZ[2] += Math.abs((int)filterZ.get(i));
+            }
+
+            filteredXYZ[0] = sumXYZ[0]/4;//sqrXYZ[0];
+            filteredXYZ[1] = sumXYZ[1]/4;//sqrXYZ[1];
+            filteredXYZ[2] = sumXYZ[2]/4;//sqrXYZ[2];
             ////Log.i(tag, "detectM+  " + filteredXYZ[0] +" "+ filteredXYZ[1] +" "+ filteredXYZ[2]);
         }
     }

@@ -182,15 +182,6 @@ public class MainActivityx extends AppCompatActivity implements AccUtils.MotionL
         public void handleMessage(Message msg) {
             switch (msg.what) {
                 case 1:
-                    if (toastMessage != null) {
-                        toastMessage.cancel();
-                        toastMessage = null;
-                    } else {
-                        toastMessage = Toast.makeText(MainActivityx.this,
-                                "motion detected!!", Toast.LENGTH_SHORT);
-                        toastMessage.show();
-                    }
-
                     tv1.setText("+++++++");
                     tv1.setTextColor(Color.RED);
 
@@ -198,10 +189,6 @@ public class MainActivityx extends AppCompatActivity implements AccUtils.MotionL
                     Log.i(tag, "toastMessage++");
                     break;
                 case 2:
-                    if (toastMessage != null) {
-                        toastMessage.cancel();
-                        toastMessage = null;
-                    }
                     tv1.setText("------");
                     tv1.setTextColor(Color.BLACK);
                     Log.i(tag, "toastMessage--");

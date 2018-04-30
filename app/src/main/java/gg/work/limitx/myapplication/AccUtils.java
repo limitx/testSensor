@@ -228,13 +228,16 @@ public class AccUtils {
         //XZ 45~135 220~320
 
         // old Z>9 X<2 Y<2
-        if (orientationXYZ[0] == 0 && (Math.abs(orientationXYZ[1]-orientationXYZ[2]) < 45)) {
-            if ((Math.abs(Z) > 8) &&
+        if ((Math.abs(360 - orientationXYZ[0]) > 340 || Math.abs(360 - orientationXYZ[0]) < 20) &&
+                (Math.abs(orientationXYZ[1]-orientationXYZ[2]) < 45)) {
+            if ((Math.abs(Z) > 7) &&
                    (((orientationXYZ[1] < 315 && orientationXYZ[1] > 225) ||
                             (orientationXYZ[1] > 45 && orientationXYZ[1] < 135)) &&
-                            (((filteredXYZ[0] + filteredXYZ[1] < 3) &&
+                            ((threshold > 12 && (filteredXYZ[0] + filteredXYZ[1] < 3) &&
                                     filteredXYZ[2] > 2*filteredXYZ[0] &&
-                                    filteredXYZ[2] > 2*filteredXYZ[1] && filteredXYZ[2] >= 20)))
+                                    filteredXYZ[2] > 2*filteredXYZ[1] && filteredXYZ[2] >= 20) ||
+                                    (threshold > 14 && filteredXYZ[2] > 5*filteredXYZ[1] && filteredXYZ[2] > 5*filteredXYZ[0])
+                                            && filteredXYZ[2] >= 32))
                     ) {
 
                 if (!sflag && System.currentTimeMillis() - time > time_interval) {
@@ -277,7 +280,7 @@ public class AccUtils {
         if (filteredXYZ[0]+filteredXYZ[1]+filteredXYZ[2] != 0) {
             Log.i(tag, "detect+  "+sflag+" : "+ filteredXYZ[0] +" "+ filteredXYZ[1] +" "+ filteredXYZ[2] +" threshold: "+ threshold);
             //Log.i(tag, "detectOriention+  " + orientationXYZ[0] + " " + orientationXYZ[1] + " " + orientationXYZ[2]);
-            //Log.i(tag, "detect xyz+  " + X + " " + Y + " " + Z);
+            Log.i(tag, "detect xyz+  " + X + " " + Y + " " + Z);
         }
     }
 
